@@ -13,7 +13,7 @@ router = APIRouter(prefix="/dummies", tags=["dummies"])
 async def get_all_dummies(db: AsyncSession = Depends(get_db)):
     return await DummyService.get_all(db)
 
-@router.get('/{dummy_id}', response_model=DummyResponse)
+@router.get('/{order_id}', response_model=DummyResponse)
 async def get_dummy(dummy: DummyResponse = Depends(valid_dummy_id)):
     return dummy
 

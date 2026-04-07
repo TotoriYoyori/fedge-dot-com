@@ -5,6 +5,9 @@ from starlette.middleware.cors import CORSMiddleware
 from src.config import settings
 from src.database import engine, Base
 from src.dummies.router import router as dummies_router
+from src.google.router import router as google_router
+from src.database import AsyncSessionLocal
+from src.google.service import ensure_google_oauth_schema
 
 SHOW_DOCS = settings.ENVIRONMENT in ('local', 'staging')
 
@@ -12,6 +15,8 @@ SHOW_DOCS = settings.ENVIRONMENT in ('local', 'staging')
 async def lifespan(fastapi: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    async with AsyncSessionLocal() as session:
+        await ensure_google_oauth_schema(session)
 
     yield
 
@@ -29,3 +34,4 @@ app.add_middleware(
 )
 
 app.include_router(dummies_router)
+app.include_router(google_router)

@@ -27,6 +27,7 @@ pip-log.txt
 .coverage
 .tox
 nosetests.xml
+pytest.ini
 
 # Translations
 *.mo
@@ -46,3 +47,4 @@ venv
 # Environment files
 .env
 .env-mysql
+credentials.json
