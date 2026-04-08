@@ -68,6 +68,18 @@ Each API resources will mostly share the following architecture from **input (us
 | `constants.py`   | Declare constants for the entire resource.                                       | `PAGINATION_LIMIT = 10`            |
 | `config.py`   | Customize per-resource configs.                                     | `class ResourceConfig(Config):`            |
 
+### 4. Individual API modules and their uses
+* `schemas.py`: The database has data that might **1. contains sensitive fields**, and/or **2. contains a lot of fields.** Having defined server schemas for each router ensures that the server never reveal more than necessary. 
+
+*Example*: If a `class User(Base)` stores `NAME`, `EMAIL`, `PHONE`, and `SOCIAL SECURITY NUMBER` in the database. We don't want to give up their SSN for everyone who makes the `/users` API calls. By creating a `class UserResponse(BaseModel)`, we can define that only `NAME`, `EMAIL`, `PHONE` are only ever returned as response. 
+
+Schemas also act as good documentation for the users, because if they view our auto-generated API documentation, they will also see what they can expect in return on `http://mysiteapi.com/docs`
+
+If a user sends a .json payload to our post endpoints, `class UserCreate(BaseModel)` uses Pydantic type hints and `Field()` class to ensure they only input validate data model before creating it in our database.
+
+
+
+
 ****
 ## `/tests`
 ### 1. Create one test folder per route

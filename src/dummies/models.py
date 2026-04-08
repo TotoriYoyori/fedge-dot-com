@@ -3,7 +3,8 @@ from sqlalchemy import String, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 
 # ----- App Modules
-from src.database import Base
+from ..database import Base
+
 
 # --------------- USERS-RELATED ORM MODELS
 class Dummy(Base):
@@ -13,9 +14,15 @@ class Dummy(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str] = mapped_column(String(255), nullable=True)
     phone: Mapped[str] = mapped_column(String(64), nullable=True)
+    dob: Mapped[str] = mapped_column(String(10), nullable=True)
+    self_intro: Mapped[str] = mapped_column(String(255), nullable=True)
 
     def __str__(self):
-        return f"{self.name} | {self.email} | {self.phone} {type(self)}"
+        return (
+            f"{self.name} | {self.email} | {self.phone} | {self.dob}\n"
+            f"{self.self_intro}\n"
+            f"{type(self)}"
+        )
 
     def __repr__(self) -> str:
         return (
