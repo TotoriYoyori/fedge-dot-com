@@ -12,6 +12,7 @@ class Dummy(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str] = mapped_column(String(255), nullable=True)
     phone: Mapped[str] = mapped_column(String(64), nullable=True)
     dob: Mapped[str] = mapped_column(String(10), nullable=True)
