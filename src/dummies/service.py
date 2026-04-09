@@ -1,4 +1,4 @@
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # ----- Local Module
@@ -25,18 +25,11 @@ class DummyService:
         return result.scalar_one_or_none()
 
     @staticmethod
-    async def create_dummy(dummy_create: DummyCreate, db: AsyncSession) -> Dummy:
+    async def create_dummy(authentication_create: DummyCreate, db: AsyncSession) -> Dummy:
+        """Admin-facing facade that reuses the auth-owned registration flow."""
         from ..authentication.service import AuthService
 
-        return await AuthService.create(dummy_create, db)
-
-    @staticmethod
-    async def get_by_name(db: AsyncSession, dummy_name: str) -> Dummy | None:
-        stmt = select(Dummy).where(
-            func.lower(Dummy.name) == dummy_name.lower()
-        )
-        result = await db.execute(stmt)
-        return result.scalar_one_or_none()
+        return await AuthService.create(authentication_create, db)
 
     @staticmethod
     async def update(dummy_update: DummyUpdate, dummy: Dummy, db: AsyncSession) -> Dummy:

@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..authentication.dependencies import dummy_with_name_exists
 from ..database import get_db
-from .dependencies import valid_dummy_id, dummy_with_name_exists
+from .dependencies import valid_dummy_id
 from .models import Dummy
 from .service import DummyService
 from .schemas import (
@@ -26,14 +27,14 @@ router = APIRouter(prefix="/dummies", tags=["dummies"])
     description="God-mode endpoint for manually creating dummy users outside the normal registration flow.",
 )
 async def godspawn_dummy(
-    dummy_create: DummyCreate,
+    authentication_create: DummyCreate,
     dummy_already_exists: bool = Depends(dummy_with_name_exists),
     db: AsyncSession = Depends(get_db)
 ):
     if dummy_already_exists:
         return None
 
-    return await DummyService.create_dummy(dummy_create, db)
+    return await DummyService.create_dummy(authentication_create, db)
 
 # FIXME: Bring me back to normal version when u r done testing >> response_model=DummyResponse
 @router.get("/", response_model=list[DummyPrivateResponse], status_code=status.HTTP_200_OK)

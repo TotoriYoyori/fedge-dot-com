@@ -4,6 +4,7 @@ from datetime import UTC, datetime, timedelta
 from fastapi.security import OAuth2PasswordBearer
 
 from ..config import settings
+from .schemas import Token
 
 password_hash = PasswordHash.recommended()
 
@@ -37,7 +38,7 @@ class AuthSecurity:
         return password_hash.verify(plain_password, hashed_password)
 
     @staticmethod
-    def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+    def create_access_token(data: dict, expires_delta: timedelta | None = None) -> Token:
         """Create a JWT access token."""
         to_encode = data.copy()
         if expires_delta:
@@ -53,7 +54,7 @@ class AuthSecurity:
             algorithm=settings.ALGORITHM
         )
 
-        return encoded_jwt
+        return Token(access_token=encoded_jwt, token_type="bearer")
 
     @staticmethod
     def verify_access_token(token: str) -> str | None:
