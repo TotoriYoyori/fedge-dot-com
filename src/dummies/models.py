@@ -12,13 +12,17 @@ class Dummy(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str] = mapped_column(String(255), nullable=True)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     phone: Mapped[str] = mapped_column(String(64), nullable=True)
     dob: Mapped[str] = mapped_column(String(10), nullable=True)
     self_intro: Mapped[str] = mapped_column(String(255), nullable=True)
 
     def __str__(self):
+        return (
+            f"{self.name} | {self.email}\n"
+            f"New password hash: {self.password_hash}"
+        )
         return (
             f"{self.name} | {self.email} | {self.phone} | {self.dob}\n"
             f"{self.self_intro}\n"

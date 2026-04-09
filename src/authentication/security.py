@@ -10,19 +10,21 @@ password_hash = PasswordHash.recommended()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/users/token")  # match api for auth
 
 
-class TokenPasswordService:
+class AuthSecurity:
     """
-    A service class for authentication-related utilities.
+    A wrapper class for security-related utilities.
 
     Provides functions for hashing passwords, verifying passwords,
     creating JWT access tokens, and verifying access tokens.
 
     Example usage:
-        >>> hashed = AuthService.hash_password("my_secret")
-        >>> AuthService.verify_password("my_secret", hashed)
+        >>> from src.authentication.security import AuthSecurity
+
+        >>> hashed = AuthSecurity.hash_password("my_secret")
+        >>> AuthSecurity.verify_password("my_secret", hashed)
         True
-        >>> token = AuthService.create_access_token({"sub": "user123"})
-        >>> AuthService.verify_access_token(token)
+        >>> token = AuthSecurity.create_access_token({"sub": "user123"})
+        >>> AuthSecurity.verify_access_token(token)
         'user123'
     """
 

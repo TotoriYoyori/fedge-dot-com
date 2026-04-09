@@ -5,6 +5,7 @@ from ..database import get_db
 from .models import Dummy
 from .service import DummyService
 from .exceptions import DummyNotFound, DummyNameAlreadyExists
+from .schemas import DummyCreate
 
 
 async def valid_dummy_id(dummy_id: int, db: AsyncSession = Depends(get_db)) -> Dummy:
@@ -16,10 +17,10 @@ async def valid_dummy_id(dummy_id: int, db: AsyncSession = Depends(get_db)) -> D
 
 
 async def dummy_with_name_exists(
-    name: str = Query(..., description="Check if your name already exists."),
+    dummy_create: DummyCreate,
     db: AsyncSession = Depends(get_db)
 ) -> bool:
-    dummy = await DummyService.get_by_name(db, name)
+    dummy = await DummyService.get_by_name(db, dummy_create.name)
     if dummy:
        raise DummyNameAlreadyExists
 

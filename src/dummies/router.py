@@ -19,15 +19,15 @@ router = APIRouter(prefix="/dummies", tags=["dummies"])
 
 
 @router.post("/", response_model=DummyResponse, status_code=status.HTTP_200_OK)
-async def create_dummy(
-    dummy: DummyCreate,
+async def godspawn_dummy(
+    dummy_create: DummyCreate,
     dummy_already_exists: bool = Depends(dummy_with_name_exists),
     db: AsyncSession = Depends(get_db)
 ):
     if dummy_already_exists:
         return None
 
-    return await DummyService.create(dummy, db)
+    return await DummyService.create(dummy_create, db)
 
 
 @router.get("/", response_model=list[DummyResponse], status_code=status.HTTP_200_OK)

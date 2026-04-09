@@ -15,3 +15,9 @@
 # FIXME: Continuing on Auth service, leaving at JWT tokens in src/auth/service.py
 
 # TODO: Add TODO for how to set up Alembic for future.
+# DONE: Migrate POST /dummies to /auth so now user creation lives in auth,
+# DONE: Also migrate any required auth-related schemas and models from dummies to /auth
+# TODO: Organize and reduce overlap between having auth and create users at the same time.
+# TODO: Keep a god-level POST /dummies to play around with adding users as needed.
+
+
