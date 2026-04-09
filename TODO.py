@@ -10,3 +10,8 @@
 # TODO: BE. App has a webpage with frontend.
 # TODO: FE. Frontend components make requests to database using backend API.
 # TODO: FE. Frontend displays information on the webpage.
+
+
+# FIXME: Continuing on Auth service, leaving at JWT tokens in src/auth/service.py
+
+# TODO: Add TODO for how to set up Alembic for future.

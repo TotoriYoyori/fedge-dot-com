@@ -13,7 +13,7 @@ class DummyWrite(BaseModel):
 
 
 class DummyCreate(DummyWrite):
-    """Create (POST) - email, phone, and password are required on create"""
+    """Create (POST) - email, phone, and password are required on create."""
     email: EmailStr
     phone: str = Field(min_length=1, max_length=64)
     password: str = Field(min_length=8)
@@ -45,7 +45,7 @@ class DummyResponse(BaseModel):
 
 
 class DummyPrivateResponse(DummyResponse):
-    pass
+    password_hash: str = Field(min_length=8)
 
 
 class DummyDeleteResponse(BaseModel):

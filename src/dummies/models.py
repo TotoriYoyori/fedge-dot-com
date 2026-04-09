@@ -6,7 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from ..database import Base
 
 
-# --------------- USERS-RELATED ORM MODELS
+# --------------- FAKE-USERS-RELATED ORM MODELS
 class Dummy(Base):
     __tablename__ = "dummies"
 

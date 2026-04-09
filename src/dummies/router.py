@@ -1,22 +1,32 @@
-from starlette import status
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
-from .dependencies import valid_dummy_id
+from .dependencies import valid_dummy_id, dummy_with_name_exists
 from .models import Dummy
 from .service import DummyService
-from .schemas import DummyCreate, DummyUpdate, DummyResponse, DummyPatch, DummyDeleteResponse
+from .schemas import (
+    DummyCreate,
+    DummyUpdate,
+    DummyPatch,
+    DummyResponse,
+    DummyDeleteResponse,
+    DummyPrivateResponse
+)
 
 # --------------- ROUTING TO http://mysite.com/dummies
 router = APIRouter(prefix="/dummies", tags=["dummies"])
 
 
-@router.post("/", response_model=DummyResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=DummyResponse, status_code=status.HTTP_200_OK)
 async def create_dummy(
     dummy: DummyCreate,
+    dummy_already_exists: bool = Depends(dummy_with_name_exists),
     db: AsyncSession = Depends(get_db)
 ):
+    if dummy_already_exists:
+        return None
+
     return await DummyService.create(dummy, db)
 
 
@@ -26,10 +36,10 @@ async def get_all_dummies(
 ):
     return await DummyService.get_all(db)
 
-
-@router.get("/{dummy_id}", response_model=DummyResponse, status_code=status.HTTP_200_OK)
+# FIXME: Bring me back to normal version when u r done testing >> response_model=DummyResponse
+@router.get("/{dummy_id}", response_model=DummyPrivateResponse, status_code=status.HTTP_200_OK)
 async def get_dummy(
-    dummy: DummyResponse = Depends(valid_dummy_id),
+    dummy: DummyPrivateResponse = Depends(valid_dummy_id),
     db: AsyncSession = Depends(get_db)
 ):
     return dummy

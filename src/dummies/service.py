@@ -1,5 +1,5 @@
 # ----- Dependencies Import
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # ----- Local Module
@@ -22,6 +22,14 @@ class DummyService:
     @staticmethod
     async def get_by_id(db: AsyncSession, dummy_id: int) -> Dummy | None:
         stmt = select(Dummy).where(Dummy.id == dummy_id)
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
+
+    @staticmethod
+    async def get_by_name(db: AsyncSession, dummy_name: str) -> Dummy | None:
+        stmt = select(Dummy).where(
+            func.lower(Dummy.name) == dummy_name.lower()
+        )
         result = await db.execute(stmt)
         return result.scalar_one_or_none()
 
