@@ -2,6 +2,8 @@ import datetime as dt
 from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field, EmailStr
 
+from ..authentication.schemas import AuthenticationCreate
+
 
 # --------------- WRITE SCHEMAS
 class DummyWrite(BaseModel):
@@ -12,11 +14,15 @@ class DummyWrite(BaseModel):
     self_intro: Optional[str] = Field(default=None, min_length=0, max_length=255)
 
 
-class DummyCreate(DummyWrite):
-    """Create (POST) - email, phone, and password are required on create."""
-    email: EmailStr
-    phone: str = Field(min_length=1, max_length=64)
-    password: str = Field(min_length=8)
+class DummyCreate(AuthenticationCreate):
+    """
+    Admin-only manual create payload.
+
+    This exists for god-mode seeding and testing workflows, not for normal user self-registration.
+    """
+    phone: Optional[str] = Field(default=None, min_length=1, max_length=64)
+    dob: Optional[str] = Field(default=None, min_length=10, max_length=10)
+    self_intro: Optional[str] = Field(default=None, min_length=0, max_length=255)
 
 
 class DummyUpdate(DummyWrite):
@@ -40,7 +46,7 @@ class DummyResponse(BaseModel):
     self_intro: Optional[str] = Field(default=None, min_length=0, max_length=255)
     email: Optional[EmailStr] = None
     phone: Optional[str] = Field(default=None, min_length=1, max_length=64)
-
+    
     model_config = ConfigDict(from_attributes=True)
 
 

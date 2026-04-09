@@ -18,7 +18,13 @@ from .schemas import (
 router = APIRouter(prefix="/dummies", tags=["dummies"])
 
 
-@router.post("/", response_model=DummyResponse, status_code=status.HTTP_200_OK)
+@router.post(
+    "/",
+    response_model=DummyResponse,
+    status_code=status.HTTP_200_OK,
+    summary="!ADMIN ONLY! Create New Dummy",
+    description="God-mode endpoint for manually creating dummy users outside the normal registration flow.",
+)
 async def godspawn_dummy(
     dummy_create: DummyCreate,
     dummy_already_exists: bool = Depends(dummy_with_name_exists),
@@ -27,10 +33,10 @@ async def godspawn_dummy(
     if dummy_already_exists:
         return None
 
-    return await DummyService.create(dummy_create, db)
+    return await DummyService.create_dummy(dummy_create, db)
 
-
-@router.get("/", response_model=list[DummyResponse], status_code=status.HTTP_200_OK)
+# FIXME: Bring me back to normal version when u r done testing >> response_model=DummyResponse
+@router.get("/", response_model=list[DummyPrivateResponse], status_code=status.HTTP_200_OK)
 async def get_all_dummies(
     db: AsyncSession = Depends(get_db)
 ):

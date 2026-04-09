@@ -1,4 +1,3 @@
-# ----- Dependencies Import
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,21 +25,18 @@ class DummyService:
         return result.scalar_one_or_none()
 
     @staticmethod
+    async def create_dummy(dummy_create: DummyCreate, db: AsyncSession) -> Dummy:
+        from ..authentication.service import AuthService
+
+        return await AuthService.create(dummy_create, db)
+
+    @staticmethod
     async def get_by_name(db: AsyncSession, dummy_name: str) -> Dummy | None:
         stmt = select(Dummy).where(
             func.lower(Dummy.name) == dummy_name.lower()
         )
         result = await db.execute(stmt)
         return result.scalar_one_or_none()
-
-    @staticmethod
-    async def create(data: DummyCreate, db: AsyncSession) -> Dummy:
-        dummy = Dummy(**data.model_dump(exclude_none=True))
-        db.add(dummy)
-        await db.commit()
-        await db.refresh(dummy)
-
-        return dummy
 
     @staticmethod
     async def update(dummy_update: DummyUpdate, dummy: Dummy, db: AsyncSession) -> Dummy:

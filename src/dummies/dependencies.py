@@ -1,11 +1,11 @@
-from fastapi import Depends, Query
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..authentication.schemas import AuthenticationCreate
 from ..database import get_db
 from .models import Dummy
 from .service import DummyService
 from .exceptions import DummyNotFound, DummyNameAlreadyExists
-from .schemas import DummyCreate
 
 
 async def valid_dummy_id(dummy_id: int, db: AsyncSession = Depends(get_db)) -> Dummy:
@@ -17,10 +17,10 @@ async def valid_dummy_id(dummy_id: int, db: AsyncSession = Depends(get_db)) -> D
 
 
 async def dummy_with_name_exists(
-    dummy_create: DummyCreate,
+    authentication_create: AuthenticationCreate,
     db: AsyncSession = Depends(get_db)
 ) -> bool:
-    dummy = await DummyService.get_by_name(db, dummy_create.name)
+    dummy = await DummyService.get_by_name(db, authentication_create.name)
     if dummy:
        raise DummyNameAlreadyExists
 
