@@ -12,7 +12,7 @@ from .schemas import (
     DummyPatch,
     DummyResponse,
     DummyDeleteResponse,
-    DummyPrivateResponse
+    DummyPrivate
 )
 
 # --------------- ROUTING TO http://mysite.com/dummies
@@ -36,17 +36,17 @@ async def godspawn_dummy(
 
     return await DummyService.create_dummy(authentication_create, db)
 
-# FIXME: Bring me back to normal version when u r done testing >> response_model=DummyResponse
-@router.get("/", response_model=list[DummyPrivateResponse], status_code=status.HTTP_200_OK)
+
+@router.get("/", response_model=list[DummyResponse], status_code=status.HTTP_200_OK)
 async def get_all_dummies(
     db: AsyncSession = Depends(get_db)
 ):
     return await DummyService.get_all(db)
 
 # FIXME: Bring me back to normal version when u r done testing >> response_model=DummyResponse
-@router.get("/{dummy_id}", response_model=DummyPrivateResponse, status_code=status.HTTP_200_OK)
+@router.get("/{dummy_id}", response_model=DummyResponse, status_code=status.HTTP_200_OK)
 async def get_dummy(
-    dummy: DummyPrivateResponse = Depends(valid_dummy_id),
+    dummy: DummyResponse = Depends(valid_dummy_id),
     db: AsyncSession = Depends(get_db)
 ):
     return dummy

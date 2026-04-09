@@ -50,7 +50,7 @@ class DummyResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class DummyPrivateResponse(DummyResponse):
+class DummyPrivate(DummyResponse):
     password_hash: str = Field(min_length=8)
 
 

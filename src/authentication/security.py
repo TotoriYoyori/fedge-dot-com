@@ -8,7 +8,7 @@ from .schemas import Token
 
 password_hash = PasswordHash.recommended()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/users/token")  # match api for auth
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="authentication/login")  # match api for auth
 
 
 class AuthSecurity:
@@ -70,7 +70,3 @@ class AuthSecurity:
             return None
         else:
             return payload.get("sub")
-
-
-class AuthService:
-    pass

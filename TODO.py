@@ -1,4 +1,11 @@
-# DEVOPTIMIZE: Workflow from app to database
+# DEVOPTIMIZE: Messaging Route
+# TODO: Accessing /notification/email to send emails to some guests
+# TODO: /notification/email have access to some static HTML template for email sending.
+# TODO: For now users can post freely to any email address to send them email
+# TODO: Extract a list of customers that has ordered, but HAVEN'T BOOKED to use this API on.
+# TODO: Later on, we will pull target email address from our database and backend google API.
+
+# DEVOPTIMIZE: Google Route
 # TODO: E. App gets raw, email HTML from Google API everyday.
 # TODO: E. App parse HTML from raw email and returns all necessary fields to .JSON format.
 # TODO: E. App import .JSON format into Pandas DataFrame.
@@ -6,20 +13,17 @@
 # TODO: T. App cleans this wide DataFrame, URNDAS_XSR
 # TODO: L. App uses backend API to make post requests to server.
 # TODO: L. Server ingests data from cleaned data to put into SQLite.
-# DEVOPTIMIZE: Workflow from database to presentation
-# TODO: BE. App has a webpage with frontend.
-# TODO: FE. Frontend components make requests to database using backend API.
-# TODO: FE. Frontend displays information on the webpage.
+# TODO: Cleaned order has appropriate ORM model to interact with in Python.
 
+# DEVOPTIMIZE: Frontend Integration
+# TODO: Frontend register form to work with authentication/register
+# TODO: Frontend login form to work with authentication/login
+# TODO: Frontend makes a call to authentication/me to check credentials.
 
-# FIXME: Continuing on Auth service, leaving at JWT tokens in src/auth/service.py
-
+# DEVOPTIMIZE: Database Migration
 # TODO: Add TODO for how to set up Alembic for future.
-# TODO: Add the existing user check to the current Registration Path.
 
-# DONE: Migrate POST /dummies to /auth so now user creation lives in auth,
-# DONE: Also migrate any required auth-related schemas and models from dummies to /auth
-# DONE: Organize and reduce overlap between having auth and create users at the same time.
-# DONE: Keep a god-level POST /dummies to play around with adding users as needed.
+# DEVOPTIMIZE: Authentication Route
+# TODO: Refactor /me route, it exposes a lot of functions atm in one route.
 
-
+# DEVOPTIMIZE: Miscellaneous
