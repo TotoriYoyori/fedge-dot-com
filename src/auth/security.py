@@ -8,7 +8,7 @@ from .schemas import Token
 
 password_hash = PasswordHash.recommended()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="authentication/login")  # match api for auth
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 
 class AuthSecurity:
@@ -19,7 +19,7 @@ class AuthSecurity:
     creating JWT access tokens, and verifying access tokens.
 
     Example usage:
-        >>> from src.authentication.security import AuthSecurity
+        >>> from src.auth.security import AuthSecurity
 
         >>> hashed = AuthSecurity.hash_password("my_secret")
         >>> AuthSecurity.verify_password("my_secret", hashed)

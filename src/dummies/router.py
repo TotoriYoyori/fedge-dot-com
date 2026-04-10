@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..authentication.dependencies import dummy_with_name_exists
+from ..auth.dependencies import dummy_with_name_exists
 from ..database import get_db
 from .dependencies import valid_dummy_id
 from .models import Dummy

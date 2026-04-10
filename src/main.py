@@ -7,7 +7,7 @@ from src.database import engine, Base
 
 from src.dummies.router import router as dummies_router
 from src.google.router import router as google_router
-from src.authentication.router import router as auth_router
+from src.auth.router import router as auth_router
 from src.notification.router import router as notification_router
 
 from src.database import AsyncSessionLocal

@@ -1,1 +1,1 @@
-from ..authentication.models import Dummy
+from ..auth.models import Dummy

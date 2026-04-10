@@ -11,6 +11,7 @@ from alembic import context
 from src.config import settings
 from src.database import Base
 from src.dummies.models import Dummy
+from src.auth.models import User
 
 # --- The Alembic Config object, provides access to the values within the alembic.ini file.
 config = context.config

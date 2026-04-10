@@ -2,16 +2,16 @@ import datetime as dt
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 
 
-class AuthenticationCreate(BaseModel):
+class AuthCreate(BaseModel):
     """
     User must input a name, email, and password to register as a new user.
     """
-    name: str = Field(min_length=1, max_length=255)
+    username: str = Field(..., min_length=1, max_length=255)
     email: EmailStr
-    password: str = Field(min_length=8)
+    password: str = Field(..., min_length=8)
 
 
-class AuthenticationResponse(BaseModel):
+class AuthResponse(BaseModel):
     """
     Server response back to users upon successful login or registration.
     """
@@ -19,11 +19,17 @@ class AuthenticationResponse(BaseModel):
     authentication_time: str = Field(
         default_factory=lambda: dt.datetime.now().strftime("%Y-%m-%d %H-%M-%S"),
     )
-    name: str = Field(min_length=1, max_length=255)
+    username: str = Field(min_length=1, max_length=255)
     email: EmailStr
     password_hash: str = Field(min_length=8)
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserPrivate(AuthResponse):
+    message: str = 'Welcome back, master Wick ...'
+    registration_date: dt.datetime
+    password_hash: str = Field(min_length=8)
 
 
 class Token(BaseModel):

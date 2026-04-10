@@ -1,7 +1,23 @@
-from sqlalchemy import Integer, String
+from datetime import datetime
+from sqlalchemy import Integer, String, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
 
-from ..database import Base
+from src.database import Base
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(String(255), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    registration_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    def __str__(self) -> str:
+        return f"Username: {self.username} | Email: {self.email} {type(self)}"
+
+    def __repr__(self) -> str:
+        return f"User(username={self.name!r}, email={self.email!r})"
 
 
 class Dummy(Base):
@@ -17,7 +33,7 @@ class Dummy(Base):
 
     def __str__(self) -> str:
         return (
-            f"{self.name} | {self.email}\n"
+            f"Name: {self.name} | Email: {self.email}\n"
             f"New password hash: {self.password_hash}"
         )
 

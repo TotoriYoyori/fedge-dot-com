@@ -27,7 +27,7 @@ class DummyService:
     @staticmethod
     async def create_dummy(authentication_create: DummyCreate, db: AsyncSession) -> Dummy:
         """Admin-facing facade that reuses the auth-owned registration flow."""
-        from ..authentication.service import AuthService
+        from ..auth.service import AuthService
 
         return await AuthService.create(authentication_create, db)
 

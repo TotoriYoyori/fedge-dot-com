@@ -22,7 +22,7 @@ async def send_notify_email(
     send_context: SendContext,
     html_body: Annotated[str, Depends(EmailDesigner.write_email_html)],
 ):
-    return await EmailService.send_email(send_context, html_body)
+    return EmailService.send_email(send_context, html_body)
 
 
 @router.get(
@@ -30,7 +30,7 @@ async def send_notify_email(
     response_class=HTMLResponse,
     status_code=status.HTTP_200_OK,
 )
-async def render_email_template(
+async def preview_email_template(
     request: Request,
     order_info: Annotated[dict, Depends(craft_template_format)],
 ):

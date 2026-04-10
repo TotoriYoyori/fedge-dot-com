@@ -5,7 +5,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from ..config import settings
-from .schemas import SendContext
+from .schemas import SendContext, SendResponse
 
 
 SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
@@ -19,11 +19,12 @@ SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "your_app_password_here")
 
 class EmailService:
 
+    # FIXME: Upgrade me to aiosmtplib later
     @staticmethod
     def send_email(
         send_context: SendContext,
         html_body: str,
-    ):
+    ) -> SendResponse:
         """
         Send a single HTML email using smtplib.
 
@@ -43,4 +44,4 @@ class EmailService:
             server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
             server.send_message(msg)
 
-        return send_context
+        return SendResponse(**send_context.model_dump())

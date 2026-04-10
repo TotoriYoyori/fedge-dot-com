@@ -2,7 +2,7 @@ import datetime as dt
 from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field, EmailStr
 
-from ..authentication.schemas import AuthenticationCreate
+from ..auth.schemas import AuthCreate
 
 
 # --------------- WRITE SCHEMAS
@@ -14,7 +14,7 @@ class DummyWrite(BaseModel):
     self_intro: Optional[str] = Field(default=None, min_length=0, max_length=255)
 
 
-class DummyCreate(AuthenticationCreate):
+class DummyCreate(AuthCreate):
     """
     Admin-only manual create payload.
 
