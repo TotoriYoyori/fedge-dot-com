@@ -5,6 +5,8 @@ from fastapi import APIRouter, Request, status, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
+from ..auth.models import User
+from ..auth.dependencies import valid_access_token
 from .designer import EmailDesigner
 from .service import EmailService
 from .schemas import SendContext, SendResponse
@@ -19,9 +21,13 @@ templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
     status_code=status.HTTP_200_OK
 )
 async def send_notify_email(
+    valid_user: Annotated[User, Depends(valid_access_token)],
     send_context: SendContext,
     html_body: Annotated[str, Depends(EmailDesigner.write_email_html)],
 ):
+    if not valid_user:
+        return None
+
     return EmailService.send_email(send_context, html_body)
 
 

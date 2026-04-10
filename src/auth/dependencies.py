@@ -42,7 +42,8 @@ async def valid_login_credentials(
 
 async def valid_access_token(
     token: Annotated[str, Depends(oauth2_scheme)],
-) -> int:
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> User:
     user_id  = AuthSecurity.verify_access_token(token)
     if not user_id:
         raise ExpiredTokenError
@@ -51,15 +52,8 @@ async def valid_access_token(
         user_id_int = int(user_id)
     except (TypeError, ValueError):
         raise MalformedToken
-    else:
-        return user_id_int
 
-
-async def valid_user_id(
-    token_user_id: Annotated[int, Depends(valid_access_token)],
-    db: Annotated[AsyncSession, Depends(get_db)],
-) -> User:
-    user = await AuthService.get_one_by("id", token_user_id, db)
+    user = await AuthService.get_one_by("id", user_id_int, db)
     if not user:
         raise UserNotFound
 

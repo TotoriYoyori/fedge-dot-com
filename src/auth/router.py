@@ -11,13 +11,12 @@ from .schemas import UserPrivate
 from .dependencies import (
     valid_login_credentials,
     username_already_exists,
-    valid_access_token,
-    valid_user_id
+    valid_access_token
 )
 from .schemas import AuthCreate, AuthResponse, Token
 from .security import AuthSecurity, oauth2_scheme
 from .service import AuthService
-from .models import Dummy
+from .models import User
 
 # --------------- ROUTER FOR USER-RELATED AUTHENTICATION
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -48,7 +47,7 @@ async def register(
     status_code=status.HTTP_200_OK
 )
 async def login(
-    valid_user: Annotated[Dummy, Depends(valid_login_credentials)],
+    valid_user: Annotated[User, Depends(valid_login_credentials)],
     db: Annotated[AsyncSession, Depends(get_db)]
 ):
     """
@@ -67,10 +66,10 @@ async def login(
 
 @router.get("/me", response_model=UserPrivate)
 async def me(
-    valid_token_user_id: Annotated[int, Depends(valid_access_token)],
+    valid_user: Annotated[User, Depends(valid_access_token)],
     db: Annotated[AsyncSession, Depends(get_db)]
 ):
     """
-    Get the currently authenticated dummy.
+    Get the currently authenticated user.
     """
-    return await AuthService.get_one_by("id", valid_token_user_id, db)
+    return valid_user
