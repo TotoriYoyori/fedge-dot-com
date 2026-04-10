@@ -4,9 +4,12 @@ from starlette.middleware.cors import CORSMiddleware
 
 from src.config import settings
 from src.database import engine, Base
+
 from src.dummies.router import router as dummies_router
 from src.google.router import router as google_router
 from src.authentication.router import router as auth_router
+from src.notification.router import router as notification_router
+
 from src.database import AsyncSessionLocal
 from src.google.service import ensure_google_oauth_schema
 
@@ -37,3 +40,4 @@ app.add_middleware(
 app.include_router(dummies_router)
 app.include_router(google_router)
 app.include_router(auth_router)
+app.include_router(notification_router)

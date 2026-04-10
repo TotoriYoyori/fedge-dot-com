@@ -1,0 +1,67 @@
+    <!doctype html>
+    <html lang="sv">
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Booking Reminder</title>
+      </head>
+      <body style="margin: 20px; padding: 20px; background-color: #fdf9f6;">
+        <!-- Outer wrapper table to center the content -->
+        <table width="100%" style="background-color: #fdf9f6; padding: 20px 0; margin: 20px ;
+        border-collapse: collapse; text-align: center;">
+          <tr>
+            <td>
+              <!-- Main content table -->
+              <table width="600" style="background-color: #ffffff; border-radius: 10px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.05); padding: 40px; border-collapse: collapse;
+                    font-family: 'Garamond', Helvetica, Arial, sans-serif; margin: 0 auto;">
+    
+                <!-- Main content row -->
+                <tr>
+                  <td style="text-align: center;">
+    
+                    <h1 style="color: #333333; margin-bottom: 10px;">Hanna & Ong</h1>
+                    <h2>Hej {{ name }}, tack för att du bokade hos oss!</h2>
+                    <p style="color: #555555; font-size: 16px; line-height: 1.5;">
+                      Du har avbokat din beställning för <strong>{{ treatment }}</strong>
+                      hos oss på <strong>{{ location }}.</strong>
+                    </p>
+                    <p style="color: #555555; font-size: 16px; line-height: 1.5;">
+                      Välj en av våra platser nedan för att boka din tid:
+                    </p>
+    
+                    <!-- Buttons -->
+                    <p style="margin: 30px 0;">
+                      <a href="https://www.bokadirekt.se/places/hanna-ong-therapy-art-limhamn-malmo-55196"
+                         style="background-color: #d8b4a0; color: #ffffff; text-decoration: none;
+                         padding: 12px 24px; margin: 12px; border-radius: 5px; font-weight: bold; display: inline-block;
+                         width: 120px; text-align: center;">
+                        Malmö
+                      </a>
+                      <a href="https://www.bokadirekt.se/places/hanna-ong-therapy-art-helsingborg-39960"
+                         style="background-color: #d8b4a0; color: #ffffff; text-decoration: none;
+                         padding: 12px 24px; margin: 12px; border-radius: 5px; font-weight: bold; display: inline-block;
+                         width: 120px; text-align: center;">
+                        Helsingborg
+                      </a>
+                    </p>
+    
+                    <p style="color: #999999; font-size: 14px;">
+                      Vi ser fram emot att välkomna dig snart!
+                    </p>
+                    <hr style="border: none; border-top: 1px solid #eeeeee; margin: 40px 0;" />
+                    <p style="color: #aaaaaa; font-size: 12px;">
+                      Om du redan har bokat hos oss, ignorera gärna detta meddelande
+                    </p>
+                    <p style="color: #aaaaaa; font-size: 12px;">
+                      Ordernummer: {{ order_number }}
+                    </p>
+                  </td>
+                </tr>
+    
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
