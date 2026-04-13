@@ -1,20 +1,18 @@
-from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from starlette.middleware.cors import CORSMiddleware
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-from src.config import settings
-from src.database import engine, Base
+from .config import settings
+from .database import engine, Base, AsyncSessionLocal
+from .google.service import ensure_google_oauth_schema
 
-from src.dummies.router import router as dummies_router
-from src.google.router import router as google_router
-from src.auth.router import router as auth_router
-from src.notification.router import router as notification_router
+from .dummies.router import router as dummies_router
+from .google.router import router as google_router
+from .auth.router import router as auth_router
+from .notification.router import router as notification_router
 
-from src.database import AsyncSessionLocal
-from src.google.service import ensure_google_oauth_schema
 
-SHOW_DOCS = settings.ENVIRONMENT in ('local', 'staging')
-
+# --------------- STARTUP AND SHUTDOWN LOGICS
 @asynccontextmanager
 async def lifespan(fastapi: FastAPI):
     async with engine.begin() as conn:
@@ -24,12 +22,15 @@ async def lifespan(fastapi: FastAPI):
 
     yield
 
+
+# --------------- APP INITIALIZATION
 app = FastAPI(
-    title='Fedge API',
+    title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    openapi_url="/openapi.json" if SHOW_DOCS else None,
+    openapi_url="/openapi.json" if settings.ENVIRONMENT in ('local', 'staging') else None,
     lifespan=lifespan,
 )
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOW_ORIGINS,

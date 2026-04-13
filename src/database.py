@@ -1,10 +1,10 @@
 from typing import AsyncGenerator
-# ----- Dependencies Import
+
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import MetaData
-# ----- App Modules
-from src.config import settings
+
+from .config import settings
 
 # ---------------- ALEMBIC MIGRATION NAMING CONVENTION
 NAMING_CONVENTION = {

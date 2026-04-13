@@ -13,6 +13,7 @@ def get_google_flow(state: str = None) -> Flow:
     )
     return flow
 
+
 def fetch_credentials_from_code(
     flow: Flow,
     code: str,

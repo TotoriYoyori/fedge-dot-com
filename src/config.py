@@ -1,32 +1,59 @@
-from pydantic import ConfigDict, field_validator, SecretStr
+import datetime as dt
+from pathlib import Path
+from functools import lru_cache
+
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from dotenv import load_dotenv
 
-load_dotenv()
-
+# --------------- FASTAPI APP CONFIGURATION
 class Config(BaseSettings):
-    # --- Default, overridable with .env
-    DATABASE_URL: str = ""
-    ENVIRONMENT: str = ""
-    APP_VERSION: str = ""
-    ALLOW_ORIGINS: str = ""
+    """
+    Central configuration for the FastAPI application.
 
-    # --- Authentication Layer
+    Loads settings from environment variables and `.env`, including 1. database,
+    2. JWT authentication, 3. email services, and 4. Google OAuth configs.
+
+    Sensitive values should be stored securely in environment variables.
+    """
+
+    # ----- I. Default
+    APP_NAME: str = "Fedge FastAPI Backend"
+    LATEST_UPDATE: str = dt.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
+    APP_VERSION: str = "0.1"
+
+    # ----- II. Environmental
+    DATABASE_URL: str
+    ENVIRONMENT: str
+    ALLOW_ORIGINS: str
+
+        # --- II.1 Authentication Layer
     SECRET_KEY: SecretStr
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ALGORITHM: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
 
-    # --- Email Notification Layer
-    SMTP_SERVER: str = "smtp.gmail.com"
-    SMTP_PORT: int = 587
-    SMTP_USERNAME: str = "teainbasement@gmail.com"
-    SMTP_PASSWORD: str = "jcws xtta hlqc mxwq"
+        # --- II.2 Email Notification Layer
+    SMTP_SERVER: str
+    SMTP_PORT: int
+    SMTP_USERNAME: str
+    SMTP_PASSWORD: str
 
+        # --- II.3 Google Authentication Layer
+    GOOGLE_CLIENT_ID: str
+    GOOGLE_CLIENT_SECRET: str
+    GOOGLE_REDIRECT_URI: str
+    GOOGLE_SCOPES: str
+
+    # ----- III. Meta Configuration
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=Path(__file__).resolve().parent.parent / ".env",
         env_file_encoding="utf-8",
         extra="allow"
     )
+
+
+@lru_cache
+def get_settings():
+    return Config()
 
 
 settings = Config()
