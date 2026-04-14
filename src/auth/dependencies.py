@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,6 +27,24 @@ async def valid_login_credentials(
         raise UnauthenticatedUser
 
     return user
+
+
+def require_role(*roles: str):
+    """
+    A role-based access control dependency factory.
+
+    Checks if the authenticated user has one of the required roles.
+    Raises HTTPException 403 if the user doesn't have the necessary permissions.
+    """
+    async def checker(current_user: Annotated[User, Depends(valid_access_token)]):
+        if current_user.role not in roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient permissions"
+            )
+        return current_user
+
+    return checker
 
 
 async def valid_access_token(

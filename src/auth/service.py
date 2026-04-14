@@ -23,7 +23,6 @@ class AuthService:
     @staticmethod
     async def create(auth_create: AuthCreate, db: AsyncSession) -> User:
         role = AuthSecurity.assign_role(auth_create.role_key)
-
         new_user = User(
             username=auth_create.username,
             email=auth_create.email,

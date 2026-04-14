@@ -1,12 +1,11 @@
 # --------------- TODAY
-# TODO: Add a role checker dependency factory.
 # TODO: Add role to JWT token encoding so users' role are checked by token.
 # TODO: Re-register a few users to test different roles.
 
 # TODO: Redesign templates for H&O emaling to include logos.
 # TODO: Run-test email sending.
 # TODO: Manually email to a few users from the .csv.
-
+# TODO: Later on we will lock certain routes to having access token and being authorized. (e.g. register/login only if no JWT)
 
 # --------------- BACKLOG
 # DEVOPTIMIZE: Messaging Route

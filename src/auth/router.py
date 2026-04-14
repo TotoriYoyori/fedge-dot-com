@@ -4,9 +4,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.auth.models import User
 from ..config import settings
 from ..database import get_db
 from .dependencies import (
+    require_role,
     username_already_exists,
     valid_access_token,
     valid_login_credentials,
@@ -35,7 +37,7 @@ async def register(
     auth_create: AuthCreate,
     username_taken: Annotated[bool, Depends(username_already_exists)],
     db: Annotated[AsyncSession, Depends(get_db)]
-) -> AuthResponse | None:
+) -> User | None:
     """
     User registration flow. Expects username, email, and password.
     """

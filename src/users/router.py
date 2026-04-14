@@ -5,10 +5,14 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..auth.models import User
+from ..auth.dependencies import require_role
 from ..database import get_db
 
-
-router = APIRouter(prefix="/users", tags=["Users"])
+router = APIRouter(
+    prefix="/users",
+    tags=["Users"],
+    dependencies=[Depends(require_role("admin"))]
+)
 
 
 @router.get("/")
