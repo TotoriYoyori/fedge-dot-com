@@ -1,6 +1,6 @@
 from fastapi import HTTPException, status
 
-# --------------- LEGACY TESTING
+# --------------- CURRENT
 UsernameAlreadyExists = HTTPException(
     status_code=status.HTTP_409_CONFLICT,
     detail="Username already exists. Please register with a different username.",
@@ -21,16 +21,4 @@ MalformedToken = HTTPException(
 UserNotFound = HTTPException(
     status_code=status.HTTP_404_NOT_FOUND,
     detail="User not found.",
-)
-
-# --------------- LEGACY TESTING
-DummyNameAlreadyExists = HTTPException(
-    status_code=status.HTTP_409_CONFLICT,
-    detail="Another dummy with specified name already exists. Please try a different name.",
-)
-
-UnauthenticatedDummy = HTTPException(
-    status_code=status.HTTP_401_UNAUTHORIZED,
-    detail="Unauthenticated. Incorrect name or password.",
-    headers={"WWW-Authenticate": "Bearer"},
 )

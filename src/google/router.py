@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.google.auth import get_google_flow, fetch_credentials_from_code
-from src.database import get_db
-from src.google.schemas import GoogleCredentialResponse, GoogleInboxResponse
-from src.google.service import (
+from ..database import get_db
+from .auth import fetch_credentials_from_code, get_google_flow
+from .schemas import GoogleCredentialResponse, GoogleInboxResponse
+from .service import (
     GoogleOAuthService,
     create_gmail_service,
     create_gmail_service_from_credentials,

@@ -43,6 +43,9 @@ class Config(BaseSettings):
     GOOGLE_REDIRECT_URI: str
     GOOGLE_SCOPES: str
 
+        # --- II.4 Roles Layer
+    DEV_ROLE_KEYS: str
+
     # ----- III. Meta Configuration
     model_config = SettingsConfigDict(
         env_file=Path(__file__).resolve().parent.parent / ".env",

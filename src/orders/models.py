@@ -1,5 +1,5 @@
 from datetime import date
-from sqlalchemy import String
+from sqlalchemy import String, Date, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.database import Base
@@ -19,11 +19,11 @@ class Orders(Base):
     def __str__(self) -> str:
         return (
             f"Order [{self.order_number}]: "
-            f"{self.name} ({self.email}) for {self.treatment} at {self.location} "
+            f"{self.full_name} ({self.office_email}) for {self.treatment_selected} at {self.location} "
             f"{type(self)}"
         )
 
     def __repr__(self) -> str:
         return (
-            f"Orders(order_number=, name=, email=, treatment=, location= )"
+            f"Orders(order_number={self.order_number!r}, full_name={self.full_name!r})"
         )

@@ -1,40 +1,50 @@
 import datetime as dt
+
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
+
+
+# --------------- I/O SCHEMAS
+class Token(BaseModel):
+    """
+    Schema for the authentication token response.
+    """
+    access_token: str = Field(..., description="The JWT access token used for authorization.")
+    token_type: str = Field(..., description="The type of the token (e.g., 'bearer').")
 
 
 class AuthCreate(BaseModel):
     """
-    User must input a name, email, and password to register as a new user.
+    Schema for creating a new user registration.
     """
-    username: str = Field(..., min_length=1, max_length=255)
-    email: EmailStr
-    password: str = Field(..., min_length=8)
+    username: str = Field(..., min_length=1, max_length=255, description="The unique username for the user.")
+    email: EmailStr = Field(..., description="The valid email address of the user.")
+    password: str = Field(..., min_length=8, description="The user's password (minimum 8 characters).")
+    role_key: str | None = Field(
+        default=None,
+        description="Optional special key to assign a specific role (e.g., 'admin') during registration."
+    )
 
 
 class AuthResponse(BaseModel):
     """
-    Server response back to users upon successful login or registration.
+    Schema for the response sent after successful registration or login.
     """
-    id: int
+    id: int = Field(..., description="The unique identifier of the user.")
     authentication_time: str = Field(
         default_factory=lambda: dt.datetime.now().strftime("%Y-%m-%d %H-%M-%S"),
+        description="The timestamp of the authentication event."
     )
-    username: str = Field(min_length=1, max_length=255)
-    email: EmailStr
-    password_hash: str = Field(min_length=8)
+    username: str = Field(min_length=1, max_length=255, description="The username of the authenticated user.")
+    email: EmailStr = Field(..., description="The email address of the authenticated user.")
+    role: str = Field(..., description="The role of the authenticated user (e.g., 'user', 'admin').")
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class UserPrivate(AuthResponse):
-    message: str = 'Welcome back, master Wick ...'
-    registration_date: dt.datetime
-    password_hash: str = Field(min_length=8)
-
-
-class Token(BaseModel):
     """
-    Server returns an access token back to users upon successful login or registration.
+    Schema for retrieving detailed private information about the current authenticated user.
     """
-    access_token: str
-    token_type: str
+    message: str = Field('Welcome back, master Wick ...', description="A personalized welcome message.")
+    registration_date: dt.datetime = Field(..., description="The date and time when the user registered.")
+    password_hash: str = Field(min_length=8, description="The hashed password of the user for internal verification.")

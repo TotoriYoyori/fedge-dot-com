@@ -1,16 +1,20 @@
-import jwt
-from pwdlib import PasswordHash
+import json
 from datetime import UTC, datetime, timedelta
+
+import jwt
 from fastapi.security import OAuth2PasswordBearer
+from pwdlib import PasswordHash
 
 from ..config import settings
 from .schemas import Token
 
+# --------------- GLOBAL INSTANCE
 password_hash = PasswordHash.recommended()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 
+# --------------- SECURITY LAYER
 class AuthSecurity:
     """
     A wrapper class for security-related utilities.
@@ -34,11 +38,17 @@ class AuthSecurity:
         return password_hash.hash(password)
 
     @staticmethod
-    def verify_password(plain_password: str, hashed_password: str) -> bool:
+    def verify_password(
+        plain_password: str,
+        hashed_password: str
+    ) -> bool:
         return password_hash.verify(plain_password, hashed_password)
 
     @staticmethod
-    def create_access_token(data: dict, expires_delta: timedelta | None = None) -> Token:
+    def create_access_token(
+        data: dict,
+        expires_delta: timedelta | None = None
+    ) -> Token:
         """Create a JWT access token."""
         to_encode = data.copy()
         if expires_delta:
@@ -55,6 +65,20 @@ class AuthSecurity:
         )
 
         return Token(access_token=encoded_jwt, token_type="bearer")
+
+    @staticmethod
+    def assign_role(role_key: str | None) -> str:
+        """Determine user's role based on provided key and system configuration."""
+        role = "user"
+        if role_key:
+            try:
+                role_keys = json.loads(settings.DEV_ROLE_KEYS)
+                if role_key in role_keys:
+                    role = role_keys[role_key]
+            except (json.JSONDecodeError, TypeError):
+                # Fallback to default if configuration is invalid
+                pass
+        return role
 
     @staticmethod
     def verify_access_token(token: str) -> str | None:

@@ -5,15 +5,14 @@ from ..auth.dependencies import dummy_with_name_exists
 from ..database import get_db
 from .dependencies import valid_dummy_id
 from .models import Dummy
-from .service import DummyService
 from .schemas import (
     DummyCreate,
-    DummyUpdate,
+    DummyDeleteResponse,
     DummyPatch,
     DummyResponse,
-    DummyDeleteResponse,
-    DummyPrivate
+    DummyUpdate,
 )
+from .service import DummyService
 
 # --------------- ROUTING TO http://mysite.com/dummies
 router = APIRouter(prefix="/dummies", tags=["dummies"])

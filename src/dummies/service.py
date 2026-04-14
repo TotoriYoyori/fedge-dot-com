@@ -1,11 +1,10 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-# ----- Local Module
 from .models import Dummy
 from .schemas import DummyCreate, DummyUpdate, DummyPatch
 
-
+# ---------------- DUMMY SERVICE
 class DummyService:
     """
     The dummy service abstract interactions between the schemas and the database. Simply, you put db
@@ -23,6 +22,14 @@ class DummyService:
         stmt = select(Dummy).where(Dummy.id == dummy_id)
         result = await db.execute(stmt)
         return result.scalar_one_or_none()
+
+    @staticmethod
+    async def get_by_name(dummy_name: str, db: AsyncSession) -> Dummy | None:
+        """LEGACY! Only for dummies"""
+        stmt = select(Dummy).where(func.lower(Dummy.name) == dummy_name.lower())
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
+
 
     @staticmethod
     async def create_dummy(authentication_create: DummyCreate, db: AsyncSession) -> Dummy:

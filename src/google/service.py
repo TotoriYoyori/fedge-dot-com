@@ -6,7 +6,7 @@ from googleapiclient.discovery import build
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.google.models import GoogleOAuthCredential, GoogleOAuthState
+from .models import GoogleOAuthCredential, GoogleOAuthState
 
 
 class GoogleOAuthService:

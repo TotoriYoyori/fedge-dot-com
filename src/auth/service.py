@@ -1,13 +1,15 @@
 import datetime as dt
 from typing import Any
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .models import User, Dummy
-from .security import AuthSecurity
+from ..config import settings
+from .models import User
 from .schemas import AuthCreate
+from .security import AuthSecurity
 
-
+# --------------- AUTHENTICATION SERVICE LAYER WITH DB
 class AuthService:
     """
     A wrapper class for authentication-related utilities (e.g. registering and logging users in).
@@ -20,10 +22,14 @@ class AuthService:
     """
     @staticmethod
     async def create(auth_create: AuthCreate, db: AsyncSession) -> User:
+        role = AuthSecurity.assign_role(auth_create.role_key)
+
         new_user = User(
-            **auth_create.model_dump(exclude={"password"}),
-            registration_date=dt.datetime.now(),
+            username=auth_create.username,
+            email=auth_create.email,
             password_hash=AuthSecurity.hash_password(auth_create.password),
+            role=role,
+            registration_date=dt.datetime.now(),
         )
         db.add(new_user)
         await db.commit()
@@ -52,12 +58,3 @@ class AuthService:
         result = await db.execute(stmt)
 
         return result.scalars().all()
-
-
-    # --------------- ONLY FOR DUMMIES
-    @staticmethod
-    async def get_by_name(dummy_name: str, db: AsyncSession) -> Dummy | None:
-        """LEGACY! Only for dummies"""
-        stmt = select(Dummy).where(func.lower(Dummy.name) == dummy_name.lower())
-        result = await db.execute(stmt)
-        return result.scalar_one_or_none()

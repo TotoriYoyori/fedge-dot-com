@@ -1,16 +1,16 @@
-from typing import Annotated
 from pathlib import Path
+from typing import Annotated
 
-from fastapi import APIRouter, Request, status, Depends
+from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from ..auth.models import User
 from ..auth.dependencies import valid_access_token
-from .designer import EmailDesigner
-from .service import EmailService
-from .schemas import SendContext, SendResponse
+from ..auth.models import User
 from .dependencies import craft_template_format
+from .designer import EmailDesigner
+from .schemas import SendContext, SendResponse
+from .service import EmailService
 
 router = APIRouter(prefix="/notification", tags=["notification"])
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))

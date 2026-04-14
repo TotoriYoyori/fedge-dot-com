@@ -1,15 +1,16 @@
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .auth.router import router as auth_router
 from .config import settings
-from .database import engine, Base, AsyncSessionLocal
+from .database import AsyncSessionLocal, Base, engine
 from .google.service import ensure_google_oauth_schema
-
 from .dummies.router import router as dummies_router
 from .google.router import router as google_router
-from .auth.router import router as auth_router
 from .notification.router import router as notification_router
+from .users.router import router as users_router
 
 
 # --------------- STARTUP AND SHUTDOWN LOGICS
@@ -42,3 +43,4 @@ app.include_router(dummies_router)
 app.include_router(google_router)
 app.include_router(auth_router)
 app.include_router(notification_router)
+app.include_router(users_router)

@@ -1,7 +1,8 @@
-from fastapi import Depends
 from pathlib import Path
+from typing import Annotated, Dict
+
+from fastapi import Depends
 from jinja2 import Environment, FileSystemLoader
-from typing import Dict, Annotated
 
 from .dependencies import craft_template_format
 

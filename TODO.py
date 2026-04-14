@@ -1,3 +1,14 @@
+# --------------- TODAY
+# TODO: Add a role checker dependency factory.
+# TODO: Add role to JWT token encoding so users' role are checked by token.
+# TODO: Re-register a few users to test different roles.
+
+# TODO: Redesign templates for H&O emaling to include logos.
+# TODO: Run-test email sending.
+# TODO: Manually email to a few users from the .csv.
+
+
+# --------------- BACKLOG
 # DEVOPTIMIZE: Messaging Route
 # TODO: Extract a list of customers that has ordered, but HAVEN'T BOOKED to use this API on.
 # TODO: Later on, we will pull target email address from our database and backend google API.
@@ -31,9 +42,6 @@
 # TODO: Add TODO for how to set up Alembic for future.
 
 # DEVOPTIMIZE: Authentication Route
-# TODO: Model and register the first Fedge user.
-# TODO: Refactor /me route, it exposes a lot of functions atm in one route.
+
 
 # DEVOPTIMIZE: Miscellaneous
-
-# FIXME: Double check my Alembic migration is not capture the user table being added

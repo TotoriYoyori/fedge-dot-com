@@ -1,34 +1,23 @@
 from typing import Annotated
+
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordRequestForm
-from oauthlib.oauth2.rfc8628.errors import ExpiredTokenError
 from sqlalchemy.ext.asyncio import AsyncSession
-from starlette import status
 
 from ..database import get_db
 from .exceptions import (
+    MalformedToken,
     UnauthenticatedUser,
     UsernameAlreadyExists,
-    MalformedToken,
-    UserNotFound
+    UserNotFound,
 )
-from .security import AuthSecurity, oauth2_scheme
-from .schemas import AuthCreate
-from .service import AuthService
 from .models import User
-
-# --------------- ACTUAL USER AUTHENTICATION DEPENDENCIES
-async def username_already_exists(
-    auth_create: AuthCreate,
-    db: Annotated[AsyncSession, Depends(get_db)],
-) -> bool:
-    user = await AuthService.get_one_by("username", auth_create.username, db)
-    if user:
-        raise UsernameAlreadyExists
-
-    return False
+from .schemas import AuthCreate
+from .security import AuthSecurity, oauth2_scheme
+from .service import AuthService
 
 
+# --------------- ORM-RETURNING VALIDATION (valid_*)
 async def valid_login_credentials(
     login_form: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Annotated[AsyncSession, Depends(get_db)]
@@ -46,7 +35,7 @@ async def valid_access_token(
 ) -> User:
     user_id  = AuthSecurity.verify_access_token(token)
     if not user_id:
-        raise ExpiredTokenError
+        raise MalformedToken
 
     try:
         user_id_int = int(user_id)
@@ -58,6 +47,18 @@ async def valid_access_token(
         raise UserNotFound
 
     return user
+
+# --------------- EXISTENCE BOOL CHECKER (*_exists)
+async def username_already_exists(
+    auth_create: AuthCreate,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> bool:
+    user = await AuthService.get_one_by("username", auth_create.username, db)
+    if user:
+        raise UsernameAlreadyExists
+
+    return False
+
 
 # --------------- LEGACY TESTING
 async def dummy_with_name_exists(
