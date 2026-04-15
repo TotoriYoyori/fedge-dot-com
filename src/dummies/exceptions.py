@@ -1,4 +1,3 @@
-from fastapi import HTTPException, status
 
 class DummyWithNameExists(Exception):
     """Raised when a dummy with the same name already exists."""

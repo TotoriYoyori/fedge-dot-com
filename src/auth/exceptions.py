@@ -21,3 +21,8 @@ class UserNotFound(Exception):
 class AlreadyAuthenticated(Exception):
     """Raised when an authenticated user tries to access a guest-only resource."""
     pass
+
+
+class InsufficientPermission(Exception):
+    """Raised when an authenticated user has insufficient permissions for a resource."""
+    pass

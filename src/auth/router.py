@@ -6,7 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.dependencies import (
     authenticated_exists,
-    require_role,
     username_already_exists,
     valid_access_token,
     valid_login_credentials,
@@ -104,7 +103,6 @@ async def login(
 )
 async def me(
     authorized_user: Annotated[User, Depends(valid_access_token)],
-    _role_check: Annotated[dict, Depends(require_role("user", "admin"))],
 ):
     """
     Authenticated profile endpoint.

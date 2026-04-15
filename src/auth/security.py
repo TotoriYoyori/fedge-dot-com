@@ -72,8 +72,8 @@ class AuthSecurity:
                 if role_key in role_keys:
                     role = role_keys[role_key]
             except (json.JSONDecodeError, TypeError):
-                # Fallback to default if configuration is invalid
                 pass
+
         return role
 
     @staticmethod

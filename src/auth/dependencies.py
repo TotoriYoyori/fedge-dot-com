@@ -1,11 +1,12 @@
-from typing import Annotated
+from typing import Annotated, Callable
 
-from fastapi import Depends, HTTPException, Request, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi import Depends
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.exceptions import (
     AlreadyAuthenticated,
+    InsufficientPermission,
     MalformedToken,
     UnauthenticatedUser,
     UsernameAlreadyExists,
@@ -32,45 +33,16 @@ async def valid_login_credentials(
     return user
 
 
-def require_role(*roles: str):
-    """
-    A role-based access control dependency factory.
-
-    Checks if the authenticated user has one of the required roles.
-    Raises HTTPException 403 if the user doesn't have the necessary permissions.
-    """
-
-    async def checker(payload: Annotated[dict | None, Depends(valid_access_token_payload)]):
-        if not payload:
-            raise UnauthenticatedUser
-        if payload.get("role") not in roles:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions"
-            )
-        return payload
-
-    return checker
-
-
-async def valid_access_token_payload(
+async def valid_access_token(
     token: Annotated[str | None, Depends(oauth2_scheme)],
-) -> dict | None:
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> User:
     if not token:
-        return None
+        raise UnauthenticatedUser
 
     payload = AuthSecurity.verify_access_token(token)
     if not payload:
         raise MalformedToken
-
-    return payload
-
-
-async def valid_access_token(
-    payload: Annotated[dict | None, Depends(valid_access_token_payload)],
-    db: Annotated[AsyncSession, Depends(get_db)],
-) -> User:
-    if not payload:
-        raise UnauthenticatedUser
 
     user_id = payload.get("sub")
     try:
@@ -85,11 +57,27 @@ async def valid_access_token(
     return user
 
 
+def require_role(*roles: str) -> Callable:
+    """
+    A role-based access control dependency factory.
+
+    Checks if the authenticated user has one of the required roles.
+    Raises InsufficientPermission if the user doesn't have the necessary permissions.
+    """
+    async def checker(user: Annotated[User, Depends(valid_access_token)]) -> User:
+        if user.role not in roles:
+            raise InsufficientPermission
+
+        return user
+
+    return checker
+
+
 # --------------- EXISTENCE BOOL CHECKER (*_exists)
 async def authenticated_exists(
-    payload: Annotated[dict | None, Depends(valid_access_token_payload)],
+    token: Annotated[str | None, Depends(oauth2_scheme)],
 ) -> bool | None:
-    if payload:
+    if token and AuthSecurity.verify_access_token(token):
         raise AlreadyAuthenticated
 
     return True

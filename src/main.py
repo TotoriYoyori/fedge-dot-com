@@ -81,6 +81,14 @@ async def already_authenticated_handler(request: Request, exc: auth_exceptions.A
     )
 
 
+@app.exception_handler(auth_exceptions.InsufficientPermission)
+async def insufficient_permission_handler(request: Request, exc: auth_exceptions.InsufficientPermission):
+    return JSONResponse(
+        status_code=status.HTTP_403_FORBIDDEN,
+        content={"detail": "Insufficient permissions"},
+    )
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOW_ORIGINS,

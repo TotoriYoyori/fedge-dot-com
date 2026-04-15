@@ -5,7 +5,6 @@ from fastapi import Depends, Request
 from jinja2 import Environment, FileSystemLoader
 
 from src.notification.dependencies import craft_template_format
-from src.notification.schemas import SendContext
 
 
 class EmailDesigner:
