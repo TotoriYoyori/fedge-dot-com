@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.dependencies import (
+    authenticated_exists,
     require_role,
     username_already_exists,
     valid_access_token,
@@ -31,6 +32,13 @@ router = APIRouter(prefix="/auth", tags=["auth"])
     ),
     response_model=AuthResponse,
     status_code=status.HTTP_201_CREATED,
+    responses={
+        201: {"model": AuthResponse, "description": "Successfully registered"},
+        400: {"description": "Malformed input"},
+        403: {"description": "Already authenticated"},
+        409: {"description": "Username already exists"},
+    },
+    dependencies=[Depends(authenticated_exists)],
 )
 async def register(
     auth_create: AuthCreate,
@@ -55,6 +63,12 @@ async def register(
     ),
     response_model=Token,
     status_code=status.HTTP_200_OK,
+    responses={
+        200: {"model": Token, "description": "Successfully logged in"},
+        401: {"description": "Invalid credentials"},
+        403: {"description": "Already authenticated"},
+    },
+    dependencies=[Depends(authenticated_exists)],
 )
 async def login(
     valid_user: Annotated[User, Depends(valid_login_credentials)],
@@ -68,7 +82,7 @@ async def login(
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
     return AuthSecurity.create_access_token(
-        data={"sub": str(valid_user.id)},
+        data={"sub": str(valid_user.id), "role": str(valid_user.role)},
         expires_delta=access_token_expires,
     )
 
@@ -81,9 +95,16 @@ async def login(
         "Requires a valid JWT token in the Authorization header."
     ),
     response_model=UserPrivate,
+    responses={
+        200: {"model": UserPrivate, "description": "Successfully retrieved user profile"},
+        401: {"description": "Unauthorized access"},
+        403: {"description": "Insufficient permissions"},
+        404: {"description": "User not found"},
+    },
 )
 async def me(
     authorized_user: Annotated[User, Depends(valid_access_token)],
+    _role_check: Annotated[dict, Depends(require_role("user", "admin"))],
 ):
     """
     Authenticated profile endpoint.

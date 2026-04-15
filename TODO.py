@@ -1,12 +1,11 @@
 # --------------- TODAY
 # DEVOPTIMIZE: Authentication Route
-# TODO: Implement role hierarchy (all admins are users, users are lowest, etc.)
-# TODO: Add role to JWT token encoding so users' role are checked by token.
-# TODO: Re-register a few users to test different roles.
-# TODO: Later on we will lock certain routes to having access token and being authorized. (e.g. register/login only if no JWT)
+# TODO: Later on we will lock certain routes to having access token and being authorized.
+## (e.g. register/login only if no JWT)
 # TODO: With role registration, implement role registration across the API.
 
 # DEVOPTIMIZE: Messaging Route
+# TODO: Clean up messaging route, there are many unused functions (designer.py)
 # TODO: Update email message template with updated banner and new content.
 
 # DEVOPTIMIZE: Deployment

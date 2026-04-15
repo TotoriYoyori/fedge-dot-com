@@ -16,3 +16,8 @@ class MalformedToken(Exception):
 class UserNotFound(Exception):
     """Raised when a user is not found in the database."""
     pass
+
+
+class AlreadyAuthenticated(Exception):
+    """Raised when an authenticated user tries to access a guest-only resource."""
+    pass

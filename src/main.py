@@ -73,6 +73,14 @@ async def user_not_found_handler(request: Request, exc: auth_exceptions.UserNotF
     )
 
 
+@app.exception_handler(auth_exceptions.AlreadyAuthenticated)
+async def already_authenticated_handler(request: Request, exc: auth_exceptions.AlreadyAuthenticated):
+    return JSONResponse(
+        status_code=status.HTTP_403_FORBIDDEN,
+        content={"detail": "Already authenticated. Logout to access this resource."},
+    )
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOW_ORIGINS,

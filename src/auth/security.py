@@ -11,7 +11,7 @@ from src.config import settings
 # --------------- GLOBAL INSTANCE
 password_hash = PasswordHash.recommended()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 
 
 # --------------- SECURITY LAYER
@@ -77,16 +77,16 @@ class AuthSecurity:
         return role
 
     @staticmethod
-    def verify_access_token(token: str) -> str | None:
-        """Verify a JWT access token and return the subject (user ID) if valid."""
+    def verify_access_token(token: str) -> dict | None:
+        """Verify a JWT access token and return the payload if valid."""
         try:
             payload = jwt.decode(
                 token,
                 settings.SECRET_KEY.get_secret_value(),
                 algorithms=[settings.ALGORITHM],
-                options={"require": ["exp", "sub"]},
+                options={"require": ["exp", "sub", "role"]},
             )
         except jwt.InvalidTokenError:
             return None
         else:
-            return payload.get("sub")
+            return payload
