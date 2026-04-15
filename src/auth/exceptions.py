@@ -1,24 +1,18 @@
-from fastapi import HTTPException, status
+class UsernameAlreadyExists(Exception):
+    """Raised when a username is already taken during registration."""
+    pass
 
-# --------------- CURRENT
-UsernameAlreadyExists = HTTPException(
-    status_code=status.HTTP_409_CONFLICT,
-    detail="Username already exists. Please register with a different username.",
-)
 
-UnauthenticatedUser = HTTPException(
-    status_code=status.HTTP_401_UNAUTHORIZED,
-    detail="Unauthenticated. Incorrect username or password.",
-    headers={"WWW-Authenticate": "Bearer"},
-)
+class UnauthenticatedUser(Exception):
+    """Raised when authentication fails (incorrect username or password)."""
+    pass
 
-MalformedToken = HTTPException(
-    status_code=status.HTTP_400_BAD_REQUEST,
-    detail="Malformed token. Please log in and try again.",
-    headers={"WWW-Authenticate": "Bearer"},
-)
 
-UserNotFound = HTTPException(
-    status_code=status.HTTP_404_NOT_FOUND,
-    detail="User not found.",
-)
+class MalformedToken(Exception):
+    """Raised when a JWT token is malformed or invalid."""
+    pass
+
+
+class UserNotFound(Exception):
+    """Raised when a user is not found in the database."""
+    pass

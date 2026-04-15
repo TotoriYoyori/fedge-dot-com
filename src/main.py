@@ -1,16 +1,19 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
-from .auth.router import router as auth_router
-from .config import settings
-from .database import AsyncSessionLocal, Base, engine
-from .google.service import ensure_google_oauth_schema
-from .dummies.router import router as dummies_router
-from .google.router import router as google_router
-from .notification.router import router as notification_router
-from .users.router import router as users_router
+from src.auth import exceptions as auth_exceptions
+from src.auth.router import router as auth_router
+from src.config import settings
+from src.database import AsyncSessionLocal, Base, engine
+from src.google.router import router as google_router
+from src.google.service import ensure_google_oauth_schema
+from src.notification.router import router as notification_router
+from src.users.router import router as users_router
 
 
 # --------------- STARTUP AND SHUTDOWN LOGICS
@@ -28,9 +31,47 @@ async def lifespan(fastapi: FastAPI):
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    openapi_url="/openapi.json" if settings.ENVIRONMENT in ('local', 'staging') else None,
+    openapi_url=(
+        "/openapi.json" if settings.ENVIRONMENT in ("local", "staging") else None
+    ),
     lifespan=lifespan,
 )
+
+
+# --------------- GLOBAL EXCEPTION HANDLERS
+@app.exception_handler(auth_exceptions.UsernameAlreadyExists)
+async def username_already_exists_handler(request: Request, exc: auth_exceptions.UsernameAlreadyExists):
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content={"detail": "Username already exists. Please register with a different username."},
+    )
+
+
+@app.exception_handler(auth_exceptions.UnauthenticatedUser)
+async def unauthenticated_user_handler(request: Request, exc: auth_exceptions.UnauthenticatedUser):
+    return JSONResponse(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        content={"detail": "Unauthenticated. Incorrect username or password."},
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+
+@app.exception_handler(auth_exceptions.MalformedToken)
+async def malformed_token_handler(request: Request, exc: auth_exceptions.MalformedToken):
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={"detail": "Malformed token. Please log in and try again."},
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+
+@app.exception_handler(auth_exceptions.UserNotFound)
+async def user_not_found_handler(request: Request, exc: auth_exceptions.UserNotFound):
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content={"detail": "User not found."},
+    )
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -39,8 +80,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(dummies_router)
 app.include_router(google_router)
 app.include_router(auth_router)
 app.include_router(notification_router)
+app.mount(
+    "/notification/static",
+    StaticFiles(directory=str(Path(__file__).parent / "notification" / "static")),
+    name="static",
+)
 app.include_router(users_router)

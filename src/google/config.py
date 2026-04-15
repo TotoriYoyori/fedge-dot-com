@@ -5,7 +5,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/google/callback")
+GOOGLE_REDIRECT_URI = os.getenv(
+    "GOOGLE_REDIRECT_URI", "http://localhost:8000/google/callback"
+)
 GOOGLE_SCOPES = [
     scope.strip()
     for scope in os.getenv(

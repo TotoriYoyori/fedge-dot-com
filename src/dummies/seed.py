@@ -1,7 +1,7 @@
 import asyncio
 
-from ..database import AsyncSessionLocal
-from .models import Dummy
+from src.database import AsyncSessionLocal
+from src.dummies.models import Dummy
 
 
 async def seed_data():

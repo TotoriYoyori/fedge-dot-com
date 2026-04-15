@@ -1,8 +1,9 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .models import Dummy
-from .schemas import DummyCreate, DummyUpdate, DummyPatch
+from src.dummies.models import Dummy
+from src.dummies.schemas import DummyCreate, DummyPatch, DummyUpdate
+
 
 # ---------------- DUMMY SERVICE
 class DummyService:
@@ -30,16 +31,19 @@ class DummyService:
         result = await db.execute(stmt)
         return result.scalar_one_or_none()
 
-
     @staticmethod
-    async def create_dummy(authentication_create: DummyCreate, db: AsyncSession) -> Dummy:
+    async def create_dummy(
+        authentication_create: DummyCreate, db: AsyncSession
+    ) -> Dummy:
         """Admin-facing facade that reuses the auth-owned registration flow."""
-        from ..auth.service import AuthService
+        from src.auth.service import AuthService
 
         return await AuthService.create(authentication_create, db)
 
     @staticmethod
-    async def update(dummy_update: DummyUpdate, dummy: Dummy, db: AsyncSession) -> Dummy:
+    async def update(
+        dummy_update: DummyUpdate, dummy: Dummy, db: AsyncSession
+    ) -> Dummy:
         new_data = dummy_update.model_dump()
         for field, new_value in new_data.items():
             setattr(dummy, field, new_value)
@@ -59,7 +63,6 @@ class DummyService:
         await db.refresh(dummy)
 
         return dummy
-
 
     @staticmethod
     async def delete(dummy: Dummy, db: AsyncSession) -> Dummy:

@@ -1,24 +1,19 @@
-import sys
 import os
+import sys
 
-sys.path.insert(
-    0, os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "..")
-    )
-)
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from logging.config import fileConfig
+
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
-
 from src.auth.models import User
 from src.config import settings
 from src.database import Base
 from src.dummies.models import Dummy
-from src.google.models import GoogleOAuthState, GoogleOAuthCredential
+from src.google.models import GoogleOAuthCredential, GoogleOAuthState
 from src.orders.models import Orders
-
 
 # --- The Alembic Config object, provides access to the values within the alembic.ini file.
 config = context.config

@@ -1,7 +1,11 @@
-from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 
-from .config import GOOGLE_CLIENT_SECRETS_FILE, GOOGLE_REDIRECT_URI, GOOGLE_SCOPES
+from google.oauth2.credentials import Credentials
+from src.google.config import (
+    GOOGLE_CLIENT_SECRETS_FILE,
+    GOOGLE_REDIRECT_URI,
+    GOOGLE_SCOPES,
+)
 
 
 def get_google_flow(state: str = None) -> Flow:

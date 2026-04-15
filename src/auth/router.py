@@ -4,19 +4,18 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.auth.models import User
-from ..config import settings
-from ..database import get_db
-from .dependencies import (
+from src.auth.dependencies import (
     require_role,
     username_already_exists,
     valid_access_token,
     valid_login_credentials,
 )
-from .models import User
-from .schemas import AuthCreate, AuthResponse, Token, UserPrivate
-from .security import AuthSecurity
-from .service import AuthService
+from src.auth.models import User
+from src.auth.schemas import AuthCreate, AuthResponse, Token, UserPrivate
+from src.auth.security import AuthSecurity
+from src.auth.service import AuthService
+from src.config import settings
+from src.database import get_db
 
 # --------------- ROUTER FOR USER-RELATED AUTHENTICATION
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -31,12 +30,12 @@ router = APIRouter(prefix="/auth", tags=["auth"])
         "otherwise, the default role is 'user'."
     ),
     response_model=AuthResponse,
-    status_code=status.HTTP_201_CREATED
+    status_code=status.HTTP_201_CREATED,
 )
 async def register(
     auth_create: AuthCreate,
     username_taken: Annotated[bool, Depends(username_already_exists)],
-    db: Annotated[AsyncSession, Depends(get_db)]
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User | None:
     """
     User registration flow. Expects username, email, and password.
@@ -46,7 +45,7 @@ async def register(
 
     return await AuthService.create(auth_create, db)
 
-# TotoriYoyori / mastercode123
+
 @router.post(
     "/login",
     summary="User login",
@@ -55,10 +54,10 @@ async def register(
         "If successful, returns a JWT access token used for accessing protected resources."
     ),
     response_model=Token,
-    status_code=status.HTTP_200_OK
+    status_code=status.HTTP_200_OK,
 )
 async def login(
-    valid_user: Annotated[User, Depends(valid_login_credentials)]
+    valid_user: Annotated[User, Depends(valid_login_credentials)],
 ) -> Token | None:
     """
     Login endpoint. Returns Bearer token on success.
@@ -81,7 +80,7 @@ async def login(
         "Returns the detailed profile of the currently authenticated user. "
         "Requires a valid JWT token in the Authorization header."
     ),
-    response_model=UserPrivate
+    response_model=UserPrivate,
 )
 async def me(
     authorized_user: Annotated[User, Depends(valid_access_token)],

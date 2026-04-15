@@ -1,12 +1,13 @@
 from datetime import datetime, timezone
 
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
+from anyio import to_thread
 from googleapiclient.discovery import build
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .models import GoogleOAuthCredential, GoogleOAuthState
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from src.google.models import GoogleOAuthCredential, GoogleOAuthState
 
 
 class GoogleOAuthService:
@@ -21,7 +22,7 @@ class GoogleOAuthService:
             state=state,
             app_user_id=app_user_id,
             code_verifier=code_verifier,
-            created_at=datetime.now(timezone.utc),
+            created_time=datetime.now(timezone.utc),
         )
         db.add(oauth_state)
         await db.commit()
@@ -69,14 +70,15 @@ class GoogleOAuthService:
                 app_user_id=app_user_id,
                 access_token=credentials.token,
                 refresh_token=credentials.refresh_token,
-                token_uri=credentials.token_uri or "https://oauth2.googleapis.com/token",
+                token_uri=credentials.token_uri
+                or "https://oauth2.googleapis.com/token",
                 client_id=credentials.client_id,
                 client_secret=credentials.client_secret,
                 scopes=scopes,
                 expiry=credentials.expiry,
                 email_address=email_address,
-                created_at=now,
-                updated_at=now,
+                created_time=now,
+                updated_time=now,
             )
             db.add(record)
         else:
@@ -88,7 +90,7 @@ class GoogleOAuthService:
             record.scopes = scopes or record.scopes
             record.expiry = credentials.expiry
             record.email_address = email_address or record.email_address
-            record.updated_at = now
+            record.updated_time = now
 
         await db.commit()
         await db.refresh(record)
@@ -113,7 +115,7 @@ async def refresh_credential_if_needed(
     creds = build_credentials(record)
     creds.expiry = record.expiry
     if creds.expired and creds.refresh_token:
-        creds.refresh(Request())
+        await to_thread.run_sync(creds.refresh, Request())
         await GoogleOAuthService.upsert_credential(
             db=db,
             app_user_id=record.app_user_id,
@@ -141,5 +143,7 @@ async def ensure_google_oauth_schema(db: AsyncSession) -> None:
     state_columns = await db.execute(text("PRAGMA table_info(google_oauth_states)"))
     state_column_names = {row[1] for row in state_columns.fetchall()}
     if "code_verifier" not in state_column_names:
-        await db.execute(text("ALTER TABLE google_oauth_states ADD COLUMN code_verifier TEXT"))
+        await db.execute(
+            text("ALTER TABLE google_oauth_states ADD COLUMN code_verifier TEXT")
+        )
         await db.commit()

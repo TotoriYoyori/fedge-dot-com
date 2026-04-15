@@ -1,12 +1,16 @@
 import datetime as dt
 from typing import Optional
-from pydantic import BaseModel, ConfigDict, Field, EmailStr
 
-from ..auth.schemas import AuthCreate
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+from src.auth.schemas import AuthCreate
+
+
+from src.schemas import CustomBaseModel
 
 
 # --------------- WRITE SCHEMAS
-class DummyWrite(BaseModel):
+class DummyWrite(CustomBaseModel):
     name: str = Field(min_length=1, max_length=255)
     email: Optional[EmailStr] = None
     phone: Optional[str] = Field(default=None, min_length=1, max_length=64)
@@ -20,6 +24,7 @@ class DummyCreate(AuthCreate):
 
     This exists for god-mode seeding and testing workflows, not for normal user self-registration.
     """
+
     phone: Optional[str] = Field(default=None, min_length=1, max_length=64)
     dob: Optional[str] = Field(default=None, min_length=10, max_length=10)
     self_intro: Optional[str] = Field(default=None, min_length=0, max_length=255)
@@ -27,16 +32,18 @@ class DummyCreate(AuthCreate):
 
 class DummyUpdate(DummyWrite):
     """Full update (PUT) — name required, everything else optional."""
+
     pass
 
 
 class DummyPatch(DummyWrite):
-    """Partial update (PATCH) — every field optional, including name. """
+    """Partial update (PATCH) — every field optional, including name."""
+
     name: Optional[str] = Field(default=None, min_length=1, max_length=255)
 
 
 # --------------- READ / RESPONSE SCHEMAS
-class DummyResponse(BaseModel):
+class DummyResponse(CustomBaseModel):
     id: int
     response_time: str = Field(
         default_factory=lambda: dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -46,15 +53,13 @@ class DummyResponse(BaseModel):
     self_intro: Optional[str] = Field(default=None, min_length=0, max_length=255)
     email: Optional[EmailStr] = None
     phone: Optional[str] = Field(default=None, min_length=1, max_length=64)
-    
-    model_config = ConfigDict(from_attributes=True)
 
 
 class DummyPrivate(DummyResponse):
     password_hash: str = Field(min_length=8)
 
 
-class DummyDeleteResponse(BaseModel):
+class DummyDeleteResponse(CustomBaseModel):
     id: int
     delete_time: str = Field(
         default_factory=lambda: dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

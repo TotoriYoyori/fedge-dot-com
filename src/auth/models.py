@@ -1,9 +1,9 @@
 from datetime import datetime
 
-from sqlalchemy import Integer, String, DateTime
+from sqlalchemy import DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from ..database import Base
+from src.database import Base
 
 
 # --------------- OFFICIAL FEDGE USERS MODEL
@@ -15,10 +15,12 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(50), nullable=False, default="user")
-    registration_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    registration_time: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
 
     def __str__(self) -> str:
         return f"Username: {self.username} | Email: {self.email} {type(self)}"
 
     def __repr__(self) -> str:
-        return f"User(username={self.name!r}, email={self.email!r})"
+        return f"User(username={self.username!r}, email={self.email!r})"

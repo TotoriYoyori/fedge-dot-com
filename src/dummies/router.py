@@ -1,18 +1,17 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..auth.dependencies import dummy_with_name_exists
-from ..database import get_db
-from .dependencies import valid_dummy_id
-from .models import Dummy
-from .schemas import (
+from src.database import get_db
+from src.dummies.dependencies import dummy_with_name_exists, valid_dummy_id
+from src.dummies.models import Dummy
+from src.dummies.schemas import (
     DummyCreate,
     DummyDeleteResponse,
     DummyPatch,
     DummyResponse,
     DummyUpdate,
 )
-from .service import DummyService
+from src.dummies.service import DummyService
 
 # --------------- ROUTING TO http://mysite.com/dummies
 router = APIRouter(prefix="/dummies", tags=["dummies"])
@@ -28,7 +27,7 @@ router = APIRouter(prefix="/dummies", tags=["dummies"])
 async def godspawn_dummy(
     authentication_create: DummyCreate,
     dummy_already_exists: bool = Depends(dummy_with_name_exists),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     if dummy_already_exists:
         return None
@@ -37,16 +36,14 @@ async def godspawn_dummy(
 
 
 @router.get("/", response_model=list[DummyResponse], status_code=status.HTTP_200_OK)
-async def get_all_dummies(
-    db: AsyncSession = Depends(get_db)
-):
+async def get_all_dummies(db: AsyncSession = Depends(get_db)):
     return await DummyService.get_all(db)
+
 
 # FIXME: Bring me back to normal version when u r done testing >> response_model=DummyResponse
 @router.get("/{dummy_id}", response_model=DummyResponse, status_code=status.HTTP_200_OK)
 async def get_dummy(
-    dummy: DummyResponse = Depends(valid_dummy_id),
-    db: AsyncSession = Depends(get_db)
+    dummy: DummyResponse = Depends(valid_dummy_id), db: AsyncSession = Depends(get_db)
 ):
     return dummy
 
@@ -60,7 +57,9 @@ async def update_dummy(
     return await DummyService.update(dummy_update, dummy, db)
 
 
-@router.patch("/{dummy_id}", response_model=DummyResponse, status_code=status.HTTP_200_OK)
+@router.patch(
+    "/{dummy_id}", response_model=DummyResponse, status_code=status.HTTP_200_OK
+)
 async def patch_dummy(
     dummy_patch: DummyPatch,
     dummy: Dummy = Depends(valid_dummy_id),
@@ -69,8 +68,9 @@ async def patch_dummy(
     return await DummyService.patch(dummy_patch, dummy, db)
 
 
-
-@router.delete("/{dummy_id}", response_model=DummyDeleteResponse, status_code=status.HTTP_200_OK)
+@router.delete(
+    "/{dummy_id}", response_model=DummyDeleteResponse, status_code=status.HTTP_200_OK
+)
 async def delete_dummy(
     dummy: Dummy = Depends(valid_dummy_id),
     db: AsyncSession = Depends(get_db),

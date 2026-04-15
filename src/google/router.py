@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..database import get_db
-from .auth import fetch_credentials_from_code, get_google_flow
-from .schemas import GoogleCredentialResponse, GoogleInboxResponse
-from .service import (
+from src.database import get_db
+from src.google.auth import fetch_credentials_from_code, get_google_flow
+from src.google.schemas import GoogleCredentialResponse, GoogleInboxResponse
+from src.google.service import (
     GoogleOAuthService,
     create_gmail_service,
     create_gmail_service_from_credentials,
@@ -14,9 +14,12 @@ from .service import (
 
 router = APIRouter(prefix="/google", tags=["google"])
 
+
 @router.get("/login")
 async def login(
-    app_user_id: str = Query(..., min_length=1, description="Your app's user identifier"),
+    app_user_id: str = Query(
+        ..., min_length=1, description="Your app's user identifier"
+    ),
     db: AsyncSession = Depends(get_db),
 ):
     flow = get_google_flow()
@@ -101,10 +104,15 @@ async def list_inbox(
 
     record = await refresh_credential_if_needed(db, record)
     service = create_gmail_service(record)
-    results = service.users().messages().list(
-        userId="me",
-        maxResults=max_results,
-    ).execute()
+    results = (
+        service.users()
+        .messages()
+        .list(
+            userId="me",
+            maxResults=max_results,
+        )
+        .execute()
+    )
     return {
         "messages": results.get("messages", []),
         "resultSizeEstimate": results.get("resultSizeEstimate"),

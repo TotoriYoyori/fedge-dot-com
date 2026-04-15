@@ -1,17 +1,15 @@
 from fastapi import HTTPException, status
 
+class DummyWithNameExists(Exception):
+    """Raised when a dummy with the same name already exists."""
+    pass
 
-DummyWithNameExists = HTTPException(
-    status_code=status.HTTP_409_CONFLICT,
-    detail="A dummy with this name already exists. Please try a different one.",
-)
 
-DummyNotFound = HTTPException(
-    status_code=status.HTTP_404_NOT_FOUND,
-    detail="DUMMY not found.",
-)
+class DummyNotFound(Exception):
+    """Raised when a dummy cannot be found in the database."""
+    pass
 
-EmailAlreadyExists = HTTPException(
-    status_code=status.HTTP_409_CONFLICT,
-    detail="DUMMY email already exists.",
-)
+
+class EmailAlreadyExists(Exception):
+    """Raised when an email is already associated with another dummy."""
+    pass

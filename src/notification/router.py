@@ -3,23 +3,21 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from ..auth.dependencies import valid_access_token
-from ..auth.models import User
-from .dependencies import craft_template_format
-from .designer import EmailDesigner
-from .schemas import SendContext, SendResponse
-from .service import EmailService
+from src.auth.dependencies import valid_access_token
+from src.auth.models import User
+from src.notification.dependencies import craft_template_format
+from src.notification.designer import EmailDesigner
+from src.notification.schemas import SendContext, SendResponse
+from src.notification.service import EmailService
 
 router = APIRouter(prefix="/notification", tags=["notification"])
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 
-@router.post(
-    "/",
-    response_model=SendResponse,
-    status_code=status.HTTP_200_OK
-)
+
+@router.post("/", response_model=SendResponse, status_code=status.HTTP_200_OK)
 async def send_notify_email(
     valid_user: Annotated[User, Depends(valid_access_token)],
     send_context: SendContext,
@@ -28,7 +26,7 @@ async def send_notify_email(
     if not valid_user:
         return None
 
-    return EmailService.send_email(send_context, html_body)
+    return await EmailService.send_email(send_context, html_body)
 
 
 @router.get(
@@ -42,6 +40,6 @@ async def preview_email_template(
 ):
     return templates.TemplateResponse(
         request=request,
-        name=f"ho_1.html",
+        name="ho_2.html",
         context=order_info,
     )

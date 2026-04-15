@@ -4,10 +4,10 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..config import settings
-from .models import User
-from .schemas import AuthCreate
-from .security import AuthSecurity
+from src.auth.models import User
+from src.auth.schemas import AuthCreate
+from src.auth.security import AuthSecurity
+
 
 # --------------- AUTHENTICATION SERVICE LAYER WITH DB
 class AuthService:
@@ -20,6 +20,7 @@ class AuthService:
         >>> async def register():
         >>>     return await AuthService.create(auth_create, db)
     """
+
     @staticmethod
     async def create(auth_create: AuthCreate, db: AsyncSession) -> User:
         role = AuthSecurity.assign_role(auth_create.role_key)
@@ -28,7 +29,7 @@ class AuthService:
             email=auth_create.email,
             password_hash=AuthSecurity.hash_password(auth_create.password),
             role=role,
-            registration_date=dt.datetime.now(),
+            registration_time=dt.datetime.now(),
         )
         db.add(new_user)
         await db.commit()
@@ -37,11 +38,7 @@ class AuthService:
         return new_user
 
     @staticmethod
-    async def get_one_by(
-        attr: str,
-        lookup_val: Any,
-        db: AsyncSession
-    ) -> User | None:
+    async def get_one_by(attr: str, lookup_val: Any, db: AsyncSession) -> User | None:
         stmt = select(User).where(getattr(User, attr) == lookup_val)
         result = await db.execute(stmt)
 
@@ -49,9 +46,7 @@ class AuthService:
 
     @staticmethod
     async def get_many_by(
-        attr: str,
-        lookup_val: Any,
-        db: AsyncSession
+        attr: str, lookup_val: Any, db: AsyncSession
     ) -> list[User] | None:
         stmt = select(User).where(getattr(User, attr) == lookup_val)
         result = await db.execute(stmt)

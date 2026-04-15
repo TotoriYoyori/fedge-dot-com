@@ -1,28 +1,30 @@
 from pathlib import Path
 from typing import Annotated, Dict
 
-from fastapi import Depends
+from fastapi import Depends, Request
 from jinja2 import Environment, FileSystemLoader
 
-from .dependencies import craft_template_format
+from src.notification.dependencies import craft_template_format
+from src.notification.schemas import SendContext
+
 
 class EmailDesigner:
 
     @staticmethod
     def write_email_html(
-        context: Annotated[dict, Depends(craft_template_format)]
+        request: Request, context: Annotated[dict, Depends(craft_template_format)]
     ) -> str:
         template_env = Environment(
             loader=FileSystemLoader(str(Path(__file__).parent / "templates"))
         )
+        template_env.globals["url_for"] = request.url_for
 
-        template = template_env.get_template('ho_1.html')
+        template = template_env.get_template("ho_2.html")
         return template.render(**context)
-
 
     @staticmethod
     def write_email_plaintext(
-        context: Annotated[dict, Depends(craft_template_format)]
+        context: Annotated[dict, Depends(craft_template_format)],
     ) -> str:
         return f"""
     Hi {context.name},
@@ -33,10 +35,7 @@ class EmailDesigner:
     """
 
     @staticmethod
-    def format_html_template(
-        data: Dict[str, str],
-        html_template: str
-    ) -> str:
+    def format_html_template(data: Dict[str, str], html_template: str) -> str:
         """
         Inject pre-built HTML email template (containing inline CSS) with variables to customize.
 
@@ -46,8 +45,7 @@ class EmailDesigner:
         name = data.get("name", "there")
         treatment = data.get("treatment", "your wellness service")
         booking_link = data.get(
-            "booking_link",
-            "https://www.bokadirekt.se"  # placeholder
+            "booking_link", "https://www.bokadirekt.se"  # placeholder
         )
 
         html = """
