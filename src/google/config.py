@@ -3,7 +3,10 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv()
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+GOOGLE_DIR = Path(__file__).resolve().parent
+
+load_dotenv(PROJECT_ROOT / ".env")
 
 GOOGLE_REDIRECT_URI = os.getenv(
     "GOOGLE_REDIRECT_URI", "http://localhost:8000/google/callback"
@@ -18,5 +21,5 @@ GOOGLE_SCOPES = [
 ]
 GOOGLE_CLIENT_SECRETS_FILE = os.getenv(
     "GOOGLE_CLIENT_SECRETS_FILE",
-    str(Path(__file__).with_name("credentials.json")),
+    str((GOOGLE_DIR / "credentials.json").resolve()),
 )

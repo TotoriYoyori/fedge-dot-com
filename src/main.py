@@ -15,6 +15,8 @@ from src.google.service import ensure_google_oauth_schema
 from src.notification.router import router as notification_router
 from src.users.router import router as users_router
 
+NOTIFICATION_STATIC_DIR = Path(__file__).resolve().parent / "notification" / "static"
+
 
 # --------------- STARTUP AND SHUTDOWN LOGICS
 @asynccontextmanager
@@ -101,7 +103,7 @@ app.include_router(auth_router)
 app.include_router(notification_router)
 app.mount(
     "/notification/static",
-    StaticFiles(directory=str(Path(__file__).parent / "notification" / "static")),
+    StaticFiles(directory=str(NOTIFICATION_STATIC_DIR)),
     name="static",
 )
 app.include_router(users_router)

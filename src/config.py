@@ -37,6 +37,7 @@ class Config(BaseSettings):
     SMTP_PORT: int
     SMTP_USERNAME: str
     SMTP_PASSWORD: str
+    SMTP_FROM_NAME: str
 
     # --- II.3 Google Authentication Layer
     GOOGLE_CLIENT_ID: str

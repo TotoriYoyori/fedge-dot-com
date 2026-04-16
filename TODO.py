@@ -1,13 +1,16 @@
 # --------------- TODAY
 # DEVOPTIMIZE: Messaging Route
-# TODO: Clean up messaging route, there are many unused functions (designer.py)
-# TODO: Update email message template with updated banner and new content.
-# TODO: Now, we will send email
-# TODO: Ask mom to borrow gmail account to get app key for temporary SMTP.
+# TODO: Also send plain text version as backup
+# TODO: Update email message template with updated banner.
 
 # DEVOPTIMIZE: Deployment
 # TODO: Refactor and prep for Docker deployment.
 
+# DEVOPTIMIZE: Frontend Integration
+# TODO: Prepare a well detailed prompt in the frontend.
+
+# DEVOPTIMIZE: Production
+# TODO: Send email to some test subjects.
 
 # --------------- BACKLOG
 # TODO: Extract a list of customers that has ordered, but HAVEN'T BOOKED to use this API on.
@@ -23,7 +26,7 @@
 # TODO: L. Server ingests data from cleaned data to put into SQLite.
 # TODO: Cleaned order has appropriate ORM model to interact with in Python.
 
-# DEVOPTIMIZE: Frontend Integration
+
 
 # DEVOPTIMIZE: Authentication Route
 
