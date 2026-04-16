@@ -16,7 +16,7 @@ class EmailDesigner:
             notification_settings.DEFAULT_TEMPLATE_NAME
         )
         return template.render(
-            name=context.name.strip().split()[0] if context.name.strip() else "",
+            name=context.name.strip().split()[0] if context.name else "",
             treatment=context.treatment,
             location=context.location,
             order_number=context.order_number,

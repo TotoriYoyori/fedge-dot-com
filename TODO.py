@@ -1,6 +1,5 @@
 # --------------- TODAY
 # DEVOPTIMIZE: Messaging Route
-# TODO: Use a simple request and for loop to test mail trap (x3)
 # TODO: Refactor mailling codebase.
 
 

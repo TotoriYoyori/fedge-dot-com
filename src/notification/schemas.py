@@ -18,7 +18,7 @@ class TemplateFormat(CustomBaseModel):
 
 class SendContext(TemplateFormat):
     subject_line: str = Field(
-        default="Din behandling vantar pa att bokas!",
+        default="Du har redan beställt friskvårdsbehandling hos oss. Boka nu!",
         min_length=1,
         max_length=64,
     )
