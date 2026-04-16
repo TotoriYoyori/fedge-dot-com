@@ -3,7 +3,7 @@ from src.notification.schemas import TemplateFormat
 
 def craft_template_format(
     name: str = "",
-    treatment: str = "en av vara tjanster",
+    treatment: str = "en eller flera behandlingar",
     order_number: str = "",
     location: str = "en av vara kliniker",
 ) -> TemplateFormat:

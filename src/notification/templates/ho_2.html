@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>Bokningsbekräftelse</title>
   </head>
   <body style="margin: 0; padding: 0; background-color: #f5eee6;">
@@ -19,20 +20,24 @@
             <!-- Banner at the top -->
             <tr>
               <td align="center">
-                <img src="https://media.discordapp.net/attachments/1444693367307899037/1493690391977791710/banner.png?ex=69dfe314&is=69de9194&hm=7a1d417f1e300fbfa6e3d5fada4035b9cc51d7b8a692247dbe71e25fdc870393&=&format=webp&quality=lossless&width=1500&height=563" alt="Banner" width="600" style="display: block; width: 100%; max-width: 600px; height: auto; border: 0;" />
+                <img src=https://media.discordapp.net/attachments/1444693367307899037/1494331838787747981/HoforFedge.png?ex=69e23879&is=69e0e6f9&hm=c76469a932de92637dffdd31b3991d62a7838806f428f5f8b447d9105336eb35&=&format=webp&quality=lossless&width=1854&height=927 alt="Banner" width="600" style="display: block; width: 100%; max-width: 600px; height: auto; border: 0;" />
               </td>
             </tr>
 
             <!-- Content row -->
             <tr>
               <td style="padding: 30px; text-align: center;">
-                <h2>Hej {{ name }}, Tack för din beställning hos Hanna & Ong.!</h2>
+                <h1>Hej{% if name %} {{ name }}{% endif %}!</h1>
+                <h2>En liten påminnelse att boka din behandling.</h2>
                 <p style="color: #555555; font-size: 16px; line-height: 1.5;">
-                  Du har beställt en behandling hos oss med ditt friskvårdsbidrag för <strong>{{ treatment }}</strong>
-                  på vår mottagning i <strong>{{ location }}</strong>.
+                  Du har tidigare beställt <strong>{{ treatment }}</strong> hos oss på Hanna & Ong med ditt friskvårdsbidrag,
+                  men har ännu inte bokat din tid.
                 </p>
                 <p style="color: #555555; font-size: 16px; line-height: 1.5;">
-                  Välj en av våra platser nedan för att boka din tid:
+                  Klicka och boka din tid via Bokadirekt på någon av våra platser nedan.
+                </p>
+                <p style="color: #555555; font-size: 16px; line-height: 1.5;">
+                  Med vänliga hälsningar,
                 </p>
 
                 <!-- Buttons -->
@@ -50,16 +55,17 @@
                     Helsingborg
                   </a>
                 </p>
-
-                <p style="color: #999999; font-size: 14px;">
-                  Vi ser fram emot att välkomna dig snart!
-                </p>
                 <hr style="border: none; border-top: 1px solid #eeeeee; margin: 40px 0;" />
                 <p style="color: #aaaaaa; font-size: 12px;">
                   Om du redan har bokat hos oss, ignorera gärna detta meddelande.
                 </p>
+                {% if order_number %}
                 <p style="color: #aaaaaa; font-size: 12px; margin-bottom: 0;">
-                  Ordernummer: {{ order_number }}
+                  Ordernummer: <strong>{{ order_number }}</strong>
+                </p>
+                {% endif %}
+                <p style="color: #aaaaaa; font-size: 12px; margin-bottom: 0;">
+                  © 2026 Hanna & Ong
                 </p>
               </td>
             </tr>

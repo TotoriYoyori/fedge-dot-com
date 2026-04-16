@@ -1,10 +1,13 @@
 # --------------- TODAY
 # DEVOPTIMIZE: Messaging Route
-# TODO: Also send plain text version as backup
-# TODO: Update email message template with updated banner.
+# TODO: Use a simple request and for loop to test mail trap (x3)
+# TODO: Refactor mailling codebase.
+
 
 # DEVOPTIMIZE: Deployment
 # TODO: Refactor and prep for Docker deployment.
+# TODO: Update email message template with updated banner.
+# TODO: Upload static files to Docker and mount files to docker.
 
 # DEVOPTIMIZE: Frontend Integration
 # TODO: Prepare a well detailed prompt in the frontend.
@@ -26,6 +29,8 @@
 # TODO: L. Server ingests data from cleaned data to put into SQLite.
 # TODO: Cleaned order has appropriate ORM model to interact with in Python.
 
+
+# TODO: One customer multiple order, have order number be a list of orders
 
 
 # DEVOPTIMIZE: Authentication Route

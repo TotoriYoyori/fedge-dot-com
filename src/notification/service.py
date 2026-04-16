@@ -1,12 +1,14 @@
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.utils import formataddr, formatdate, make_msgid
+from email.header import Header
 import smtplib
 
 import asyncer
 
-from src.config import settings
 from src.notification.designer import EmailDesigner
 from src.notification.schemas import SendContext, SendResponse
+from src.notification.settings import notification_settings as ns
 
 
 class EmailService:
@@ -33,15 +35,24 @@ class EmailService:
         Synchronous internal implementation for sending email.
         """
         html_body = EmailDesigner.write_email_html(send_context)
+        plain_body = EmailDesigner.write_email_plaintext(send_context)
 
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = send_context.subject_line
-        msg["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_USERNAME}>"
+        msg["Subject"] = Header(send_context.subject_line, "utf-8")
+        msg["From"] = formataddr(
+            (
+                str(Header(ns.smtp_from_name, "utf-8")),
+                ns.smtp_username,
+            )
+        )
         msg["To"] = send_context.to_email
+        msg["Date"] = formatdate(localtime=True)
+        msg["Message-ID"] = make_msgid(domain="hannaong.se") # FIXME: Remove this hardcode when you can
 
-        msg.attach(MIMEText(html_body, "html"))
+        msg.attach(MIMEText(plain_body, "plain", "utf-8"))
+        msg.attach(MIMEText(html_body, "html", "utf-8"))
 
-        with smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT) as server:
+        with smtplib.SMTP(ns.smtp_host, ns.smtp_port) as server:
             server.starttls()
-            server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
+            server.login(ns.smtp_username, ns.smtp_password)
             server.send_message(msg)

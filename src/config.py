@@ -32,20 +32,13 @@ class Config(BaseSettings):
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
 
-    # --- II.2 Email Notification Layer
-    SMTP_SERVER: str
-    SMTP_PORT: int
-    SMTP_USERNAME: str
-    SMTP_PASSWORD: str
-    SMTP_FROM_NAME: str
-
-    # --- II.3 Google Authentication Layer
+    # --- II.2 Google Authentication Layer
     GOOGLE_CLIENT_ID: str
     GOOGLE_CLIENT_SECRET: str
     GOOGLE_REDIRECT_URI: str
     GOOGLE_SCOPES: str
 
-    # --- II.4 Roles Layer
+    # --- II.3 Roles Layer
     DEV_ROLE_KEYS: str
 
     # ----- III. Meta Configuration

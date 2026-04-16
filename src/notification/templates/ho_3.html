@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bokningsbekr&auml;ftelse</title>
+  </head>
+  <body bgcolor="#f5eee6" style="background-color: #f5eee6; margin: 0; padding: 0;">
+    <table
+      width="100%"
+      border="0"
+      cellspacing="0"
+      cellpadding="0"
+      bgcolor="#f5eee6"
+      style="background-color: #f5eee6;"
+    >
+      <tr>
+        <td align="center">
+          <table
+            width="600"
+            border="0"
+            cellspacing="0"
+            cellpadding="0"
+            bgcolor="#ffffff"
+            style="background-color: #ffffff; border-collapse: collapse;"
+          >
+            <tr>
+              <td align="center">
+                <a href="https://www.hannaong.se/" style="text-decoration:none;">
+                <img
+                  src="https://media.discordapp.net/attachments/1444693367307899037/1494331838787747981/HoforFedge.png?ex=69e23879&is=69e0e6f9&hm=c76469a932de92637dffdd31b3991d62a7838806f428f5f8b447d9105336eb35&=&format=webp&quality=lossless&width=1854&height=927"
+                  alt="Hanna och Ong"
+                  width="600"
+                  border="0"
+                  style="display: block; width: 600px; border: 0;"
+                />
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td
+                align="center"
+                style="font-family: Georgia, Garamond, Arial, Helvetica, sans-serif; color: #333333;"
+              >
+                <table
+                  width="100%"
+                  border="0"
+                  cellspacing="0"
+                  cellpadding="0"
+                  style="border-collapse: collapse;"
+                >
+                  <tr>
+                    <td align="center" style="padding: 32px 24px 12px 24px; font-size: 30px; line-height: 38px;">
+                      Hej{% if name %} {{ name }}{% endif %}!
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="padding: 0 24px 12px 24px; font-size: 22px; line-height: 30px;">
+                      En liten p&aring;minnelse att boka din behandling.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="padding: 0 40px 14px 40px; font-size: 16px; line-height: 24px;">
+                      Du har tidigare best&auml;llt {{ treatment }} hos oss p&aring; Hanna &amp; Ong med ditt friskv&aring;rdsbidrag, men har &auml;nnu inte bokat din tid.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="padding: 0 40px 20px 40px; font-size: 16px; line-height: 24px;">
+                      Klicka och boka din tid via Bokadirekt p&aring; {{ location }}.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="padding: 0 24px 12px 24px; font-size: 16px; line-height: 24px;">
+                      Med v&auml;nliga h&auml;lsningar,
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="padding: 8px 24px 24px 24px;">
+                      <table border="0" cellspacing="0" cellpadding="0">
+                        <tr>
+                          <td align="center" style="padding: 0 8px 0 8px;">
+                            <table border="0" cellspacing="0" cellpadding="0">
+                              <tr>
+                                <td align="center" width="100" bgcolor="#d8b4a0" style="background-color: #d8b4a0; padding: 12px 24px;">
+                                  <a
+                                    href="https://www.bokadirekt.se/places/hanna-ong-therapy-art-limhamn-malmo-55196"
+                                    style="font-family: Georgia, Garamond, Arial, Helvetica, sans-serif; font-size: 16px; color: #ffffff; text-decoration: none"
+                                  >
+                                    Malm&ouml;
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                          <td align="center" style="padding: 0 8px 0 8px;">
+                            <table border="0" cellspacing="0" cellpadding="0">
+                              <tr>
+                                <td align="center" width="100" bgcolor="#d8b4a0" style="background-color: #d8b4a0; padding: 12px 24px;">
+                                  <a
+                                    href="https://www.bokadirekt.se/places/hanna-ong-therapy-art-helsingborg-39960"
+                                    style="font-family: Georgia, Garamond, Arial, Helvetica, sans-serif; font-size: 16px; color: #ffffff; text-decoration: none"
+                                  >
+                                    Helsingborg
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="padding: 0 40px 0 40px;">
+                      <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                        <tr>
+                          <td height="1" bgcolor="#eeeeee" style="background-color: #eeeeee; font-size: 1px; line-height: 1px;">
+                            &nbsp;
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="padding: 20px 40px 8px 40px; font-family: Georgia, Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color: #888888;">
+                      Om du redan har bokat hos oss, ignorera g&auml;rna detta meddelande.
+                    </td>
+                  </tr>
+                  {% if order_number %}
+                  <tr>
+                    <td align="center" style="padding: 0 40px 8px 40px; font-family: Georgia, Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color: #888888;">
+                        Ordernummer: {{ order_number }}
+                    </td>
+                  </tr>
+                  {% endif %}
+                  <tr>
+                    <td align="center" style="padding: 0 40px 28px 40px; font-family: Georgia, Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color: #888888;">
+                      &copy; 2026 Hanna &amp; Ong
+                    </td>
+                  </tr>
+                <tr>
+                  <td align="center" class="mobile-pad" style="padding: 0 40px 6px 40px; font-family: Georgia, Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color: #888888;">
+                    Idrottsgatan 21, 216 14 Limhamn
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" class="mobile-pad" style="padding: 0 40px 28px 40px; font-family: Georgia, Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color: #888888;">
+                    <a href="https://www.hannaong.se/" style="color: #888888; text-decoration: underline;">
+                      www.hannaong.se
+                    </a>
+                  </td>
+                </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -1,4 +1,5 @@
 import datetime as dt
+from typing import Optional
 
 from pydantic import EmailStr, Field
 
@@ -6,11 +7,12 @@ from src.schemas import CustomBaseModel
 
 
 class TemplateFormat(CustomBaseModel):
-    name: str = Field(default=None)
-    treatment: str = Field(default="en av vara tjanster", min_length=1, max_length=64)
-    location: str = Field(default="en av vara kliniker", min_length=1, max_length=64)
-    order_number: str = Field(
-        ..., min_length=1, max_length=64, description="Order number, vary per provider"
+    name: Optional[str] = Field(default=None)
+    treatment: str = Field(default="en eller flera behandlingar", min_length=1, max_length=128)
+    location: str = Field(default="en av vara kliniker", min_length=1, max_length=128)
+    order_number: Optional[str] = Field(
+        default=None,
+        description="Order number, vary per provider"
     )
 
 

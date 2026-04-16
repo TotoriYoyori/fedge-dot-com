@@ -1,9 +1,9 @@
 from fastapi import Request
 from jinja2 import Template
 
-from src.notification.schemas import SendContext
+from src.notification.schemas import SendContext, TemplateFormat
 from src.notification.settings import (
-    NotificationSettings,
+    notification_settings,
     template_env,
     template_renderer,
 )
@@ -13,26 +13,42 @@ class EmailDesigner:
     @staticmethod
     def write_email_html(context: SendContext) -> str:
         template: Template = template_env.get_template(
-            NotificationSettings.DEFAULT_TEMPLATE_NAME
+            notification_settings.DEFAULT_TEMPLATE_NAME
         )
         return template.render(
-            **context.model_dump(exclude={"subject_line", "to_email"})
+            name=context.name.strip().split()[0] if context.name.strip() else "",
+            treatment=context.treatment,
+            location=context.location,
+            order_number=context.order_number,
         )
 
     @staticmethod
     def write_email_plaintext(context: SendContext) -> str:
-        return f"""
-    Hi {context.name},
+        greeting_name = f" {context.name}" if context.name else ""
+        order_number_line = (
+            f"\nOrdernummer: {context.order_number}" if context.order_number else ""
+        )
 
-    This is a friendly reminder to book your {context.treatment}.
-
-    We look forward to seeing you soon!
-    """
+        return (
+            f"Hej{greeting_name}!\n\n"
+            "En liten paminnelse att boka din behandling.\n\n"
+            f"Du har tidigare bestallt {context.treatment} hos oss pa Hanna & Ong "
+            "med ditt friskvardsbidrag, men har annu inte bokat din tid.\n\n"
+            f"Klicka och boka din tid via Bokadirekt pa {context.location}.\n\n"
+            "Malmo: https://www.bokadirekt.se/places/"
+            "hanna-ong-therapy-art-limhamn-malmo-55196\n"
+            "Helsingborg: https://www.bokadirekt.se/places/"
+            "hanna-ong-therapy-art-helsingborg-39960\n\n"
+            "Med vanliga halsningar,\n\n"
+            "Om du redan har bokat hos oss, ignorera garna detta meddelande."
+            f"{order_number_line}\n\n"
+            "(c) 2026 Hanna & Ong"
+        )
 
     @staticmethod
-    def render_template_preview(request: Request, context: SendContext) -> str:
+    def render_template_preview(request: Request, preview: TemplateFormat) -> str:
         return template_renderer.TemplateResponse(
             request=request,
-            name=NotificationSettings.DEFAULT_TEMPLATE_NAME,
-            context=context.model_dump(exclude={"subject_line", "to_email"}),
+            name=notification_settings.DEFAULT_TEMPLATE_NAME,
+            context=preview.model_dump(),
         )
