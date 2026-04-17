@@ -54,3 +54,5 @@ credentials.json
 
 # Custom
 tests/TODO.py
+src/dummies
+src/orders/sample

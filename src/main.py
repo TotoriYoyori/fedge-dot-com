@@ -1,21 +1,14 @@
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 
 from src.auth import exceptions as auth_exceptions
 from src.auth.router import router as auth_router
 from src.config import settings
-from src.database import AsyncSessionLocal, Base, engine
-from src.google.router import router as google_router
-from src.google.service import ensure_google_oauth_schema
+from src.database import Base, engine
 from src.notification.router import router as notification_router
-from src.users.router import router as users_router
-
-NOTIFICATION_STATIC_DIR = Path(__file__).resolve().parent / "notification" / "static"
 
 
 # --------------- STARTUP AND SHUTDOWN LOGICS
@@ -23,8 +16,6 @@ NOTIFICATION_STATIC_DIR = Path(__file__).resolve().parent / "notification" / "st
 async def lifespan(fastapi: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    async with AsyncSessionLocal() as session:
-        await ensure_google_oauth_schema(session)
 
     yield
 
@@ -33,9 +24,7 @@ async def lifespan(fastapi: FastAPI):
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    openapi_url=(
-        "/openapi.json" if settings.ENVIRONMENT in ("local", "staging") else None
-    ),
+    openapi_url="/openapi.json" if settings.ENVIRONMENT in ("local", "staging") else None,
     lifespan=lifespan,
 )
 
@@ -98,12 +87,5 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(google_router)
 app.include_router(auth_router)
 app.include_router(notification_router)
-app.mount(
-    "/notification/static",
-    StaticFiles(directory=str(NOTIFICATION_STATIC_DIR)),
-    name="static",
-)
-app.include_router(users_router)

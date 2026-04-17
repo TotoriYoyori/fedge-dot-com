@@ -6,22 +6,34 @@ from alembic import context
 from src.auth.models import User
 from src.config import settings
 from src.database import Base
-from src.dummies.models import Dummy
-from src.google.models import GoogleOAuthCredential, GoogleOAuthState
-from src.orders.models import Orders
 
-# --- The Alembic Config object, provides access to the values within the alembic.ini file.
+# ----- Coming in future updates -----
+# from src.google.models import GoogleOAuthCredential, GoogleOAuthState
+# from src.orders.models import Orders
+# ------------------------------------
+
+# ----- The Alembic Config object, provides access to the values within the alembic.ini file.
 config = context.config
 
-# --- Interpret the config file for Python logging. This line sets up loggers basically.
+# ----- Interpret the config file for Python logging. This line sets up loggers basically.
 # if config.config_file_name is not None:
 #     fileConfig(config.config_file_name)
 
-# add your model's MetaData object here for 'autogenerate' support
+# ----- Add your model's MetaData object here for 'autogenerate' support
 target_metadata = Base.metadata
 
-# other values from the config, defined by the needs of env.py, can be acquired:
-sync_url = settings.DATABASE_URL.replace("sqlite+aiosqlite", "sqlite")
+# ----- Converting between FastAPI's async database URL to sync version for Alembic.
+def get_sync_url(url: str) -> str:
+    """Convert an async database URL to a sync one for Alembic."""
+    if url.startswith("sqlite+aiosqlite"):
+        return url.replace("sqlite+aiosqlite", "sqlite")
+
+    if url.startswith("postgresql+asyncpg"):
+        return url.replace("postgresql+asyncpg", "postgresql")
+    return url
+
+
+sync_url = get_sync_url(settings.DATABASE_URL)
 config.set_main_option("sqlalchemy.url", sync_url)
 
 

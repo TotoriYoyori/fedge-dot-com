@@ -2,7 +2,7 @@ import datetime as dt
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import SecretStr
+from pydantic import SecretStr, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -24,24 +24,30 @@ class Config(BaseSettings):
 
     # ----- II. Environmental
     DATABASE_URL: str
-    ENVIRONMENT: str
-    ALLOW_ORIGINS: str
+    DB_ECHO: bool = True
+    ENVIRONMENT: str = "local"
+    ALLOW_ORIGINS: str = "*"
 
     # --- II.1 Authentication Layer
     SECRET_KEY: SecretStr
-    ALGORITHM: str
-    ACCESS_TOKEN_EXPIRE_MINUTES: int
-
-    # --- II.2 Google Authentication Layer
-    GOOGLE_CLIENT_ID: str
-    GOOGLE_CLIENT_SECRET: str
-    GOOGLE_REDIRECT_URI: str
-    GOOGLE_SCOPES: str
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
 
     # --- II.3 Roles Layer
-    DEV_ROLE_KEYS: str
+    DEV_ROLE_KEYS: str = "{}"
 
-    # ----- III. Meta Configuration
+    # ----- III. Paths
+    @computed_field
+    @property
+    def project_root(self) -> Path:
+        return Path(__file__).resolve().parent.parent
+
+    @computed_field
+    @property
+    def notification_static_dir(self) -> Path:
+        return self.project_root / "src" / "notification" / "static"
+
+    # ----- IV. Meta Configuration
     model_config = SettingsConfigDict(
         env_file=Path(__file__).resolve().parent.parent / ".env",
         env_file_encoding="utf-8",
@@ -50,7 +56,7 @@ class Config(BaseSettings):
 
 
 @lru_cache
-def get_settings():
+def get_settings() -> Config:
     return Config()
 
 

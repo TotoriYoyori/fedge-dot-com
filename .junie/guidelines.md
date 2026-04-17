@@ -93,5 +93,3 @@ Only add this if dealing with more complex validations that Pydantic doesn't alr
 - Use module-level `config.py` for domain-specific settings that don't belong globally
 - Use `pyprojec.toml` in the project root for static settings that do not vary between environments (e.g. 
 package settings)
-
-# If you have read this guidelines, respond with 'Nier Automata'
