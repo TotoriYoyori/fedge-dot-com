@@ -48,3 +48,6 @@ venv
 .env
 .env-mysql
 credentials.json
+
+# Static
+/site

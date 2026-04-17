@@ -1,0 +1,76 @@
+site_name: FEDGE
+site_description: Some services provided by Fedge
+#site_url: http://127.0.0.1:8000/
+
+docs_dir: docs
+dev_addr: 127.0.0.1:8001
+
+theme:
+  variant: classic
+  name: material
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/lightbulb-auto
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/lightbulb
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/lightbulb-outline
+        name: Switch to system preference
+
+  features:
+    - content.code.annotate      # Inline code annotations
+    - content.code.copy          # Copy button on code blocks
+    - navigation.tabs            # Top-level tabs
+    - navigation.tabs.sticky     # Tabs stay visible while scrolling
+    - navigation.sections        # Expand sections in sidebar
+    - navigation.expand          # Auto-expand sidebar
+    - navigation.top             # Back-to-top button
+    - search.highlight           # Highlight search terms
+    - search.suggest             # Search autocomplete
+
+extra_css:
+  - css/extra.css
+
+# Navigation structure
+nav:
+  - FEDGE: index.md
+  - ABOUT: about/index.md
+  - LEARN:
+    - learn/index.md
+    - Virtual Environments: learn/venv-setup.md
+    - Database:
+      - database/index.md
+      - database/database-setup.md
+      - database/config-alembic.md
+      - database/config-model.md
+      - database/template.md
+  - API DOCUMENTATION: api/index.md
+
+# Markdown extensions (crucial for rich content)
+markdown_extensions:
+  - admonition                   # Note/Warning/Tip boxes
+  - pymdownx.details             # Collapsible sections
+  - pymdownx.superfences         # Nested code blocks
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite        # Inline code highlighting
+  - pymdownx.tabbed:
+      alternate_style: true      # Content tabs (Python vs JS etc.)
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true            # Anchor links on headings

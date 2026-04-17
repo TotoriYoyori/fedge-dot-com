@@ -1,12 +1,6 @@
 # --------------- TODAY
-# DEVOPTIMIZE: Messaging Route
-# TODO: Refactor mailling codebase.
-
-
 # DEVOPTIMIZE: Deployment
-# TODO: Refactor and prep for Docker deployment.
-# TODO: Update email message template with updated banner.
-# TODO: Upload static files to Docker and mount files to docker.
+# TODO: Refactor mailing codebase and prep for Render deployment.
 
 # DEVOPTIMIZE: Frontend Integration
 # TODO: Prepare a well detailed prompt in the frontend.

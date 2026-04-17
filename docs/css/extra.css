@@ -1,0 +1,6 @@
+:root {
+  --md-primary-fg-color:        #d42a43;  /* strawberry red */
+  --md-primary-fg-color--light: #E06B80;
+  --md-primary-fg-color--dark:  #FFC69D;
+  --md-accent-fg-color:         #FFE6D4;
+}

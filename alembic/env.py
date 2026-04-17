@@ -7,8 +7,8 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
-
 from alembic import context
+
 from src.auth.models import User
 from src.config import settings
 from src.database import Base

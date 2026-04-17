@@ -78,8 +78,6 @@ Schemas also act as good documentation for the users, because if they view our a
 If a user sends a .json payload to our post endpoints, `class UserCreate(BaseModel)` uses Pydantic type hints and `Field()` class to ensure they only input validate data model before creating it in our database.
 
 
-
-
 ****
 ## `/tests`
 ### 1. Create one test folder per route
