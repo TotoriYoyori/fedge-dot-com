@@ -23,11 +23,7 @@
 # TODO: Cleaned order has appropriate ORM model to interact with in Python.
 
 
-# TODO: One customer multiple order, have order number be a list of orders
-
-
 # DEVOPTIMIZE: Authentication Route
 
 
 # DEVOPTIMIZE: Database Migration
-# TODO: Add TODO for how to set up Alembic for future (must do this yourself)

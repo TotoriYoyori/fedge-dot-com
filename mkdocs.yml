@@ -52,9 +52,8 @@ nav:
     - Database:
       - database/index.md
       - database/database-setup.md
-      - database/config-alembic.md
-      - database/config-model.md
-      - database/template.md
+      - database/alembic-setup.md
+      - database/performing-migration.md
   - API DOCUMENTATION: api/index.md
 
 # Markdown extensions (crucial for rich content)

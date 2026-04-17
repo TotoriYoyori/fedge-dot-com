@@ -1,9 +1,3 @@
-import sys
-from pathlib import Path
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
-
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
