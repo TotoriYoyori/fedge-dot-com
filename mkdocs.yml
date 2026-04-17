@@ -1,9 +1,9 @@
 site_name: FEDGE
 site_description: Some services provided by Fedge
-#site_url: http://127.0.0.1:8000/
+#site_url: http://127.0.0.1:3000/
 
 docs_dir: docs
-dev_addr: 127.0.0.1:8001
+dev_addr: 127.0.0.1:3000
 
 theme:
   variant: classic
@@ -54,6 +54,14 @@ nav:
       - database/database-setup.md
       - database/alembic-setup.md
       - database/performing-migration.md
+    - Google Integration:
+      - google-oauth2/index.md
+      - Glossary: google-oauth2/glossary.md
+      - Setup & Config: google-oauth2/setup-config.md
+      - The OAuth Dance: google-oauth2/workflow.md
+      - Talking to Gmail: google-oauth2/gmail-integration.md
+      - Maintenance & Security: google-oauth2/maintenance.md
+      - Onboarding Exercises: google-oauth2/onboarding.md
   - API DOCUMENTATION: api/index.md
 
 # Markdown extensions (crucial for rich content)

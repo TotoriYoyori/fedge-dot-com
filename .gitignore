@@ -51,3 +51,6 @@ credentials.json
 
 # Static
 /site
+
+# Custom
+tests/TODO.py
