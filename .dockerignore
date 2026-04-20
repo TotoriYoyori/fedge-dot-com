@@ -1,0 +1,59 @@
+# Python
+*.py[cod]
+__pycache__
+*.so
+*.egg
+*.egg-info
+dist
+build
+
+# Virtual environments
+.venv
+venv
+env
+
+# Environment files (secrets should be injected, not baked in)
+.env
+.env.*
+
+# Dev dependencies (not needed in image)
+requirements/dev.txt
+
+# Tests (not needed in production image)
+/tests
+.coverage
+.tox
+.pytest_cache
+pytest.ini
+
+# Version control
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.iml
+
+# Docker files themselves
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Docs
+/site
+/docs
+mkdocs.yml
+.junie
+
+# --- Excluded Modules (Not for deployment)
+src/dummies
+src/google
+src/orders
+src/users
+
+# --- Files and Databases
+db.sqlite3
+*.db
+*.sqlite3
+credentials.json
