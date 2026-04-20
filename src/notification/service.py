@@ -47,7 +47,7 @@ class EmailService:
         )
         msg["To"] = send_context.to_email
         msg["Date"] = formatdate(localtime=True)
-        msg["Message-ID"] = make_msgid(domain="hanna-ong.com") # FIXME: Remove this hardcode when you can
+        msg["Message-ID"] = make_msgid()
 
         msg.attach(MIMEText(plain_body, "plain", "utf-8"))
         msg.attach(MIMEText(html_body, "html", "utf-8"))
