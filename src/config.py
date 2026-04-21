@@ -28,14 +28,6 @@ class Config(BaseSettings):
     ENVIRONMENT: str = "local"
     ALLOW_ORIGINS: str = "*"
 
-    # --- II.1 Authentication Layer
-    SECRET_KEY: SecretStr
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
-
-    # --- II.3 Roles Layer
-    DEV_ROLE_KEYS: str = "{}"
-
     # ----- III. Paths
     @computed_field
     @property

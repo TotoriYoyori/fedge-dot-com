@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Auth{% endblock %} | Fedge</title>
+
+    <link rel="stylesheet" href="/static/landing/css/base.css">
+    <link rel="stylesheet" href="/static/auth/css/auth.css">
+    {% block styles %}{% endblock %}
+</head>
+<body>
+    <header>
+        <a href="/" class="logo" style="text-decoration: none; color: var(--text-color); font-family: var(--font-heading); font-size: 2rem;">Fedge</a>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        &copy; 2026 FEDGE EMAIL READER. ALL RIGHTS RESERVED.
+    </footer>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

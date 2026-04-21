@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="auth-container" style="max-width: 800px;">
+    <div class="auth-card">
+        <h2>Welcome back, {{ user.username }}</h2>
+        <h2>Dashboard</h2>
+        <p>Welcome to your Fedge dashboard. This is a placeholder for your email reading experience.</p>
+        
+        <div style="margin-top: 2rem; padding: 2rem; border: 1px dashed #ccc; border-radius: 4px; text-align: center; color: #666;">
+            <h3>Your Inbox</h3>
+            <p>Coming soon: A tranquil way to manage your communications.</p>
+        </div>
+
+        <div class="auth-footer" style="margin-top: 2rem; display: flex; justify-content: space-between; align-items: center;">
+            <a href="/" class="btn btn-login">Back to Home</a>
+            <form action="/logout" method="post">
+                <button type="submit" class="btn btn-logout">Logout</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

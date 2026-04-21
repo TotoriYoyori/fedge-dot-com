@@ -14,7 +14,7 @@ from src.auth.models import User
 from src.auth.schemas import AuthCreate, AuthResponse, Token, UserPrivate
 from src.auth.security import AuthSecurity
 from src.auth.service import AuthService
-from src.config import settings
+from src.auth.settings import auth_settings
 from src.database import get_db
 
 # --------------- ROUTER FOR USER-RELATED AUTHENTICATION
@@ -78,7 +78,7 @@ async def login(
     if not valid_user:
         return None
 
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token_expires = timedelta(minutes=auth_settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
     return AuthSecurity.create_access_token(
         data={"sub": str(valid_user.id), "role": str(valid_user.role)},

@@ -6,7 +6,8 @@ import jwt
 from pwdlib import PasswordHash
 
 from src.auth.schemas import Token
-from src.config import settings
+from src.auth.settings import auth_settings
+
 
 # --------------- GLOBAL INSTANCE
 password_hash = PasswordHash.recommended()
@@ -51,13 +52,13 @@ class AuthSecurity:
             expire = datetime.now(UTC) + expires_delta
         else:
             expire = datetime.now(UTC) + timedelta(
-                minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+                minutes=auth_settings.ACCESS_TOKEN_EXPIRE_MINUTES
             )
         to_encode.update({"exp": expire})
         encoded_jwt = jwt.encode(
             to_encode,
-            settings.SECRET_KEY.get_secret_value(),
-            algorithm=settings.ALGORITHM,
+            auth_settings.SECRET_KEY.get_secret_value(),
+            algorithm=auth_settings.ALGORITHM,
         )
 
         return Token(access_token=encoded_jwt, token_type="bearer")
@@ -68,7 +69,7 @@ class AuthSecurity:
         role = "user"
         if role_key:
             try:
-                role_keys = json.loads(settings.DEV_ROLE_KEYS)
+                role_keys = json.loads(auth_settings.DEV_ROLE_KEYS)
                 if role_key in role_keys:
                     role = role_keys[role_key]
             except (json.JSONDecodeError, TypeError):
@@ -82,8 +83,8 @@ class AuthSecurity:
         try:
             payload = jwt.decode(
                 token,
-                settings.SECRET_KEY.get_secret_value(),
-                algorithms=[settings.ALGORITHM],
+                auth_settings.SECRET_KEY.get_secret_value(),
+                algorithms=[auth_settings.ALGORITHM],
                 options={"require": ["exp", "sub", "role"]},
             )
         except jwt.InvalidTokenError:

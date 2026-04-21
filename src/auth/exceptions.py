@@ -1,5 +1,5 @@
 from fastapi import Request, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 
 class UsernameAlreadyExists(Exception):
     pass
@@ -77,3 +77,12 @@ def register_exception_handlers(app) -> None:
             status_code=status.HTTP_403_FORBIDDEN,
             content={"detail": "Insufficient permissions"},
         )
+
+    # FIXME: Refactor to have a separate handler for SSR flow.
+    # ----- SSR handlers — redirect instead of JSON
+    @app.exception_handler(UnauthenticatedUser)
+    async def unauthenticated_handler(request: Request, exc: UnauthenticatedUser):
+        if "text/html" in request.headers.get("accept", ""):
+            return RedirectResponse(url="/login", status_code=303)
+
+        return await unauthenticated_user_handler(request, exc)
