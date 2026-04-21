@@ -2,14 +2,12 @@ from pathlib import Path
 
 from fastapi.templating import Jinja2Templates
 from jinja2 import Environment, FileSystemLoader
-from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from src.schemas import DomainSettings
 
 
-class NotificationSettings(BaseSettings):
-    TEMPLATES_DIR: str = str(Path(__file__).resolve().parent / "templates")
+class NotificationSettings(DomainSettings):
     DEFAULT_TEMPLATE_NAME: str = "ho_3.html"
-
-    ENVIRONMENT: str
 
     SMTP_SERVER: str
     SMTP_PORT: int
@@ -22,12 +20,6 @@ class NotificationSettings(BaseSettings):
     SANDBOX_SMTP_USERNAME: str | None = None
     SANDBOX_SMTP_PASSWORD: str | None = None
     SANDBOX_SMTP_FROM_NAME: str | None = None
-
-    model_config = SettingsConfigDict(
-        env_file=Path(__file__).resolve().parent.parent.parent / ".env",
-        env_file_encoding="utf-8",
-        extra="allow",
-    )
 
     @property
     def smtp_host(self) -> str:
@@ -62,7 +54,7 @@ class NotificationSettings(BaseSettings):
 
 notification_settings = NotificationSettings()
 
-template_env = Environment(
+notification_env = Environment(
     loader=FileSystemLoader(notification_settings.TEMPLATES_DIR)
 )
-template_renderer = Jinja2Templates(directory=notification_settings.TEMPLATES_DIR)
+notification_page = Jinja2Templates(directory=notification_settings.TEMPLATES_DIR)

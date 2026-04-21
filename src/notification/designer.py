@@ -4,15 +4,15 @@ from jinja2 import Template
 from src.notification.schemas import SendContext, TemplateFormat
 from src.notification.settings import (
     notification_settings,
-    template_env,
-    template_renderer,
+    notification_env,
+    notification_page,
 )
 
 
 class EmailDesigner:
     @staticmethod
     def write_email_html(context: SendContext) -> str:
-        template: Template = template_env.get_template(
+        template: Template = notification_env.get_template(
             notification_settings.DEFAULT_TEMPLATE_NAME
         )
         return template.render(
@@ -47,7 +47,7 @@ class EmailDesigner:
 
     @staticmethod
     def render_template_preview(request: Request, preview: TemplateFormat) -> str:
-        return template_renderer.TemplateResponse(
+        return notification_page.TemplateResponse(
             request=request,
             name=notification_settings.DEFAULT_TEMPLATE_NAME,
             context=preview.model_dump(),

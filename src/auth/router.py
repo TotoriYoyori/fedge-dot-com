@@ -18,7 +18,7 @@ from src.config import settings
 from src.database import get_db
 
 # --------------- ROUTER FOR USER-RELATED AUTHENTICATION
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["api-auth"])
 
 
 @router.post(

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="/static/landing/css/home.css">
+{% endblock %}
+
+{% block body %}
+    <header>
+        <a href="/" class="logo">Fedge</a>
+        <nav class="auth-buttons">
+            <a href="/login" class="btn btn-login">Login</a>
+            <a href="/register" class="btn btn-register">Register</a>
+        </nav>
+    </header>
+
+    <main>
+        <h1>A New Way to Read</h1>
+        <p>Experience your emails in a beautifully designed, focused environment. Inspired by tranquility, built for productivity.</p>
+        <div class="hero-cta">
+            <a href="/register" class="btn btn-register">Get Started</a>
+        </div>
+    </main>
+
+    <footer>
+        &copy; 2026 FEDGE EMAIL READER. ALL RIGHTS RESERVED.
+    </footer>
+{% endblock %}
+
+{% block scripts %}
+    <script src="/static/landing/js/home.js"></script>
+{% endblock %}

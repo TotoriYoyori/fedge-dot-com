@@ -1,87 +1,117 @@
-# FastAPI Scalable Monolithic Project Structure, the Guide
+# Project Architecture 🏗️
 
-## (Update v0.1)
-* Writing my first entry
+Welcome to the **Project Architecture** guide! This document serves as a quickstart for developers to understand the structural DNA of FEDGE. 
 
-****
-## `.env`
-Describe what variables, informations, keys, credentials that the program relies on to run. The same variable will vary per environment, preparing your apps to run differently depending on your computer, or on the cloud. 
+We follow a **Domain-Driven Design (DDD)**, meaning we group our code by "what it does for the user" (Features) rather than "what it is for the computer" (Types).
 
-**NEVER MAKE PUBLIC YOUR .ENV KEY IN THE CODEBASE**
+---
 
-| Type of `.env`       | Applicable to                                    | Example                                      |
-|---------------------|-------------------------------------------------|---------------------------------------------|
-| Local `.env`         | Information that your computer has; never share with others. | `DATABASE_URL=sqlite:///dev.db` <br> `SECRET_KEY=my-local-secret` |
-| Deployment `.env`    | Information that the deployment server will have. | `DATABASE_URL=postgres://user:pass@db:5432/prod` <br> `SECRET_KEY=super-secret-value` |
+## 1. Project Structure Overview 🗺️
 
-****
-## `/requirements`
-`/requirements` folder can have multiple files to organize different requirements **per environments** for your project.
+FEDGE is organized to be scalable, maintainable, and easy to navigate. Here is the high-level layout of the entire project:
 
-| File Name   | Applicable Environment                   | Example                                             |
-|------------|-----------------------------------------|----------------------------------------------------|
-| `base.txt` | For all environments                     | `fastapi`, `pydantic`, `SQLAlchemy`, `uvicorn`   |
-| `dev.txt`  | Development, local, or staging          | `black`, `pytest`, `PrettyTable`                  |
-| `prod.txt` | Production                               | `something`                                       |
+```text
+.
+├── alembic/            # Database migration scripts and versioning
+├── docs/               # Project documentation (MkDocs)
+├── requirements/       # Environment-specific dependency lists
+│   ├── base.txt        # Core dependencies (FastAPI, SQLAlchemy, Pydantic)
+│   ├── dev.txt         # Development tools (pytest, black, isort)
+│   └── prod.txt        # Production-only requirements
+├── src/                # The Heart: Main source code
+│   ├── auth/           # Domain: Authentication & Authorization
+│   ├── google/         # Domain: Google OAuth & Gmail integration
+│   ├── landing/        # Domain: Landing pages and SSR content
+│   ├── notification/   # Domain: Email engine & Template designer
+│   ├── orders/         # Domain: Order processing logic
+│   ├── users/          # Domain: User management
+│   ├── config.py       # Global configuration management
+│   ├── database.py     # Database engine and session setup
+│   ├── main.py         # App entry point and router registration
+│   └── schemas.py      # Global base schemas and settings classes
+├── tests/              # Automated test suites mirroring src/
+├── alembic.ini         # Alembic configuration
+├── docker-compose.yml  # Docker orchestration (if applicable)
+├── Dockerfile          # Container definition
+├── mkdocs.yml          # Documentation configuration
+└── pyproject.toml      # Build system and tool configuration
+```
 
-****
-## `/src`
-### 1. App Entry Points and Setup
-Create the following files in your `/src`:
+---
 
-| File Name       | Purpose                                                                                     | Important Snippet                          |
-|-----------------|---------------------------------------------------------------------------------------------|-------------------------------------------|
-| `__init__.py`   | Indicate to Python that `src` is a package and make public functions available.             | `__all__ = []`                            |
-| `main.py`       | Entry point: initiate database, backend app, install middleware, and hook up configurations and environments. | `app = FastAPI()`      |
-| `config.py`     | Read from environment variables and set up app configurations.                               | `class Config()`, `settings = Config()`   |
-| `database.py`   | Session factory pattern and database engine initialization.                                  | `get_db()`, `engine = create_engine()`    |
-| `exceptions.py` | Custom general exceptions.                                                                  | `MyException = HTTPException()`           |
+## 2. Domain Structure 🚀
 
+Each folder within `src/` represents a self-contained **Domain Module**. This modular approach ensures that features are decoupled and can be maintained independently.
 
-### 2. One Package per Resource
-Each package is a resource organizer. It groups routes, services, models, schemas, constants related to the delivery of an entity. When you need to introduce new resources to your API, you would also create a new folder.
+### Comprehensive Module Anatomy
 
-*Example*: `/src/users` --> API routes related to delivering `users` data.
+A typical domain module (e.g., `src/auth/`) is composed of the following components:
 
-*Example*: `/src/orders` --> API routes related to delivering `orders` data.
+| File | Role | Description |
+| :--- | :--- | :--- |
+| `router.py` | **The Face** | Defines API endpoints using `APIRouter`. Maps HTTP requests to service functions. |
+| `pages.py` | **The View** | (Optional) Contains routes for Server-Side Rendering (SSR) that return `HTMLResponse`. |
+| `service.py` | **The Brain** | Houses business logic. It remains independent of FastAPI dependencies and focuses on data processing. |
+| `models.py` | **The Skeleton** | SQLAlchemy ORM models defining the database schema for this domain. |
+| `schemas.py` | **The Filter** | Pydantic models for request validation (Input) and response serialization (Output). |
+| `dependencies.py`| **The Guard** | Reusable logic for route protection (e.g., `get_current_user`, permission checks). |
+| `settings.py` | **The Heart** | Domain-specific configuration (e.g., SMTP settings for notifications). Often inherits from `DomainSettings`. |
+| `exceptions.py` | **The Voice** | Custom domain exceptions that provide clear error signaling. |
+| `constants.py` | **The Law** | (Optional) Domain-specific constants, enums, or fixed values. |
+| `utils.py` | **The Hand** | (Optional) Helper functions specific to the domain's internal logic. |
+| `templates/` | **The Canvas** | (Optional) Jinja2 HTML templates for SSR or email generation. |
+| `static/` | **The Style** | (Optional) Static assets (CSS, JS, Images) served by the module. |
 
-### 3. Separate API logics into modules
-Each API resources will mostly share the following architecture from **input (user's requests)** to **output (server's response)**.
-1. First, the user makes a requests by HTTPs to our servers (e.g. `http://mywebsite.com/api/v1/resources`)
-2. The requests is captured by a Web Server Gateway Interface, and routed to the server (because otherwise our server doesn't actually know how to parse https)
-3. The requests URL is matched to one specified in `router.py`, which is like a map that points toward the correct response.
-4. The router processes any dependency before performing the requests, in `dependencies.py`
-4. The router will orchestrate a response model, according to one specified by your `schema.py`.
-5. The router calls the service layer `service.py` to query and perform operations in the database.
-6. The service layer maps and returns Python object in the form of ORM mapping of the database records. specified by your `models.py`
-7. The information propagate upward to route, encapsulated in a a response model, and return to the user.
+### Module Communication
+When importing across modules, we use **explicit module-level imports** to avoid circular dependencies and maintain clarity:
+```python
+from src.auth import service as auth_service
+from src.notification import schemas as notification_schemas
+```
 
-| File Name         | Purpose                                                                                     | Important Snippet                                  |
-|------------------|---------------------------------------------------------------------------------------------|--------------------------------------------------|
-| `__init__.py`     | Indicate to Python that this resource is a Python package.                                   | `__all__ = []`                                    |
-| `router.py`       | Entry point. Resolve dependencies. Map user requests to the correct service and respond in the correct response model. | `@router.get('/', response_model=ResponseModel)` |
-| `service.py`      | Perform DB operations and return ORM models.                                                | `def get_all_users(db) -> list[Users]`           |
-| `schemas.py`      | Specify server's response format and perform field validation.                              | `class UserResponse:`, `class UserCreate:`      |
-| `models.py`       | ORM models, allowing database records to be represented in Python as objects.              | `class User(Base):`                              |
-| `dependencies.py` | Like `service.py`, but focused on validation and error-proofing.                            | `async def is_valid_id() -> bool`                |
-| `exceptions.py`   | Customize exceptions to your business requirements.                                         | `class UserNotFound(HTTPException):`            |
-| `constants.py`   | Declare constants for the entire resource.                                       | `PAGINATION_LIMIT = 10`            |
-| `config.py`   | Customize per-resource configs.                                     | `class ResourceConfig(Config):`            |
+---
 
-### 4. Individual API modules and their uses
-* `schemas.py`: The database has data that might **1. contains sensitive fields**, and/or **2. contains a lot of fields.** Having defined server schemas for each router ensures that the server never reveal more than necessary. 
+## Environment Configuration 🔐
 
-*Example*: If a `class User(Base)` stores `NAME`, `EMAIL`, `PHONE`, and `SOCIAL SECURITY NUMBER` in the database. We don't want to give up their SSN for everyone who makes the `/users` API calls. By creating a `class UserResponse(BaseModel)`, we can define that only `NAME`, `EMAIL`, `PHONE` are only ever returned as response. 
+### `.env`
+We use `.env` files to manage secrets and environment-specific settings. 
 
-Schemas also act as good documentation for the users, because if they view our auto-generated API documentation, they will also see what they can expect in return on `http://mysiteapi.com/docs`
+**CRITICAL: NEVER COMMIT YOUR `.env` FILE TO THE CODEBASE.**
 
-If a user sends a .json payload to our post endpoints, `class UserCreate(BaseModel)` uses Pydantic type hints and `Field()` class to ensure they only input validate data model before creating it in our database.
+| Type of `.env` | Purpose | Example |
+| :--- | :--- | :--- |
+| **Local** | Your personal dev settings; never shared. | `DATABASE_URL=sqlite:///db.sqlite3` |
+| **Deployment** | Settings for the cloud/production server. | `DATABASE_URL=postgres://user:pass@db:5432/prod` |
 
+---
 
-****
-## `/tests`
-### 1. Create one test folder per route
-Always prefix the resource folder you want to test with `test_` so that `pytest` knows how to find the test.
+## Database Evolution 🧬
 
-### 2. Create fixtures and write unit tests for each and every function
-To make things easier on yourself and others, always use **dependency injection** patterns into your code so you can test the logic, without needing the result.
+We use **Alembic** to track changes to our database. Think of it as "Git for your data structure." 
+
+1. **Models** change in `models.py`.
+2. **Migrations** are generated in `alembic/versions/`.
+3. **Schema** is updated by running the migration.
+
+---
+
+## Testing Strategy 🧪
+
+### `/tests`
+Quality is not an accident. We organize tests to mirror our source structure:
+
+* **Unit Tests**: Testing individual functions in `service.py`.
+* **Integration Tests**: Testing full API flows via `router.py`.
+
+Always use **Dependency Injection** (like `get_db`) to make your code "testable." This allows us to swap a real database for a fast, in-memory one during tests.
+
+---
+
+## Summary 📝
+
+By following this structure, we ensure that:
+1. **New developers** can find code easily.
+2. **The app** remains fast and async-first.
+3. **Deployment** is predictable and secure.
+
+Now that you know the architecture, you're ready to start building! 🛠️✨

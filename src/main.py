@@ -3,13 +3,18 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
-from src.auth import exceptions as auth_exceptions
-from src.auth.router import router as auth_router
 from src.config import settings
 from src.database import Base, engine
-from src.notification.router import router as notification_router
 
+from src.auth import exceptions as auth_exceptions
+
+from src.landing.pages import page as landing_page
+from src.auth.pages import page as auth_page
+
+from src.auth.router import router as auth_router
+from src.notification.router import router as notification_router
 
 # --------------- STARTUP AND SHUTDOWN LOGICS
 @asynccontextmanager
@@ -18,7 +23,6 @@ async def lifespan(fastapi: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
 
     yield
-
 
 # --------------- APP INITIALIZATION
 app = FastAPI(
@@ -29,63 +33,24 @@ app = FastAPI(
 )
 
 
-# --------------- GLOBAL EXCEPTION HANDLERS
-@app.exception_handler(auth_exceptions.UsernameAlreadyExists)
-async def username_already_exists_handler(request: Request, exc: auth_exceptions.UsernameAlreadyExists):
-    return JSONResponse(
-        status_code=status.HTTP_409_CONFLICT,
-        content={"detail": "Username already exists. Please register with a different username."},
-    )
+# --------------- REGISTER EXCEPTION HANDLERS
+auth_exceptions.register_exception_handlers(app)
 
-
-@app.exception_handler(auth_exceptions.UnauthenticatedUser)
-async def unauthenticated_user_handler(request: Request, exc: auth_exceptions.UnauthenticatedUser):
-    return JSONResponse(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        content={"detail": "Unauthenticated. Incorrect username or password."},
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-
-
-@app.exception_handler(auth_exceptions.MalformedToken)
-async def malformed_token_handler(request: Request, exc: auth_exceptions.MalformedToken):
-    return JSONResponse(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        content={"detail": "Malformed token. Please log in and try again."},
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-
-
-@app.exception_handler(auth_exceptions.UserNotFound)
-async def user_not_found_handler(request: Request, exc: auth_exceptions.UserNotFound):
-    return JSONResponse(
-        status_code=status.HTTP_404_NOT_FOUND,
-        content={"detail": "User not found."},
-    )
-
-
-@app.exception_handler(auth_exceptions.AlreadyAuthenticated)
-async def already_authenticated_handler(request: Request, exc: auth_exceptions.AlreadyAuthenticated):
-    return JSONResponse(
-        status_code=status.HTTP_403_FORBIDDEN,
-        content={"detail": "Already authenticated. Logout to access this resource."},
-    )
-
-
-@app.exception_handler(auth_exceptions.InsufficientPermission)
-async def insufficient_permission_handler(request: Request, exc: auth_exceptions.InsufficientPermission):
-    return JSONResponse(
-        status_code=status.HTTP_403_FORBIDDEN,
-        content={"detail": "Insufficient permissions"},
-    )
-
-
+# --------------- REGISTER MIDDLEWARE
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOW_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# --------------- REGISTER STATIC FILES
+app.mount("/static/landing", StaticFiles(directory="src/landing/static"), name="landing-static")
+app.mount("/static/auth", StaticFiles(directory="src/auth/static"), name="auth-static")
+
+# --------------- REGISTER ROUTER & SSR PAGES
+app.include_router(landing_page)
+app.include_router(auth_page)
 
 app.include_router(auth_router)
 app.include_router(notification_router)
