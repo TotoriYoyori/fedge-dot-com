@@ -5,9 +5,9 @@ from fastapi.requests import Request
 
 from src.auth.dependencies import valid_cookie_token
 from src.auth.models import User
-from src.landing.settings import landing_settings
-from src.templates import templates
+from src.landing.settings import LandingNav
 from src.schemas import RouteDecoratorPreset
+from src.templates import templates
 
 # ---------------
 page = APIRouter(tags=["ssr"])
@@ -26,6 +26,6 @@ async def home(
 ):
     return templates.TemplateResponse(
         request=request,
-        name=landing_settings.HOME_PAGE,
+        name=LandingNav.HOME_PAGE,
         context={"current_user": current_user},
     )

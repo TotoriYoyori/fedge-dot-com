@@ -44,7 +44,7 @@ async def _verify_token(access_token: str, db: AsyncSession) -> User:
     return user
 
 
-# --------------- ORM-RETURNING VALIDATION (valid_*)
+# --------------- ORM-RETURNING VALIDATION (valid_*, required_role)
 async def valid_login_credentials(
     login_form: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Annotated[AsyncSession, Depends(get_db)],
@@ -92,18 +92,21 @@ async def valid_cookie_token(
         return None
 
 
-def require_role(*roles: str) -> Callable:
+def require_role(*roles: str, use_cookie: bool = False) -> Callable:
     """
     Enforces specific authorization levels across different routes to restrict 
-    access based on user permissions.
+    access based on user permissions. Use cookies for SSR-flows and no cookies for API route.
 
     :param roles: One or more role names permitted to access the resource.
-    :return: A dependency function that validates the user's role.
+    :param use_cookie: Whether to use cookie or not.
+    :return: A dependency function that validates the user's role. Will return the current user
+    at the end of the flow in addition to roles.
     """
-    async def checker(user: Annotated[User, Depends(valid_access_token)]) -> User:
+    check_cookie_or_token = valid_cookie_token if use_cookie else valid_access_token
+
+    async def checker(user: Annotated[User, Depends(check_cookie_or_token)]) -> User:
         if user.role not in roles:
             raise InsufficientPermission
-
         return user
 
     return checker

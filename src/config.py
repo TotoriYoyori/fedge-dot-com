@@ -20,7 +20,7 @@ class Config(BaseSettings):
     # ----- I. Default
     APP_NAME: str = "Fedge FastAPI Backend"
     LATEST_UPDATE: str = dt.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
-    APP_VERSION: str = "0.1"
+    APP_VERSION: str = "0.2"
 
     # ----- II. Environmental
     DATABASE_URL: str

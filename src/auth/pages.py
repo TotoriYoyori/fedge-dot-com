@@ -1,31 +1,89 @@
-from datetime import timedelta
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
+from pydantic import ValidationError
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.templates import templates
+from src.auth.dependencies import (
+    valid_login_credentials,
+    valid_cookie_token,
+)
 from src.auth.models import User
+from src.auth.schemas import AuthCreate
 from src.auth.security import AuthSecurity
-from src.auth.settings import auth_settings
-from src.auth.dependencies import valid_login_credentials, valid_cookie_token
+from src.auth.service import AuthService
+from src.auth.responses import AuthResponse
+from src.auth.settings import AuthNav
+from src.database import get_db
+from src.schemas import RouteDecoratorPreset
+from src.templates import templates
 
 # --------------- PAGE ROUTING
 page = APIRouter(tags=["ssr"])
 
-@page.get("/register", name="register_page", response_class=HTMLResponse, response_model=None)
+@page.get(
+    "/register",
+    name="register_page",
+    summary="Renders the page where user can register a new account",
+    **RouteDecoratorPreset.html_get()
+)
 async def register_page(
     request: Request,
     current_user: Annotated[User | None, Depends(valid_cookie_token)],
 ):
     if current_user:
-        return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+        return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
     return templates.TemplateResponse(
         request=request,
-        name=auth_settings.REGISTER_PAGE,
+        name=AuthNav.REGISTER_PAGE,
         context={},
     )
+
+
+@page.post(
+    "/register",
+    name="register_submit",
+    summary="Send post to register a new user",
+    **RouteDecoratorPreset.html_post(),
+)
+async def register_submit(
+    request: Request,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User | None, Depends(valid_cookie_token)],
+):
+    if current_user:
+        return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+
+    form = await request.form()
+    form_data = dict(form)
+
+    try:
+        auth_create = AuthCreate.model_validate(form_data)
+    except ValidationError:
+        return templates.TemplateResponse(
+            request=request,
+            name=AuthNav.REGISTER_PAGE,
+            context={"error": "Please provide a valid username, email, and password."},
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    existing_user = await AuthService.get_one_by("username", auth_create.username, db)
+    if existing_user:
+        return templates.TemplateResponse(
+            request=request,
+            name=AuthNav.REGISTER_PAGE,
+            context={"error": "Username already taken, please choose another one."},
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    created_user = await AuthService.create(auth_create, db)
+    token = AuthSecurity.create_access_token(
+        data={"sub": str(created_user.id), "role": str(created_user.role)},
+    )
+
+    return AuthResponse.store_cookie_response(token)
 
 
 @page.get("/login", name="login_page", response_class=HTMLResponse, response_model=None)
@@ -34,11 +92,11 @@ async def login_page(
     current_user: Annotated[User | None, Depends(valid_cookie_token)],
 ):
     if current_user:
-        return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+        return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
     return templates.TemplateResponse(
         request=request,
-        name=auth_settings.LOGIN_PAGE,
+        name=AuthNav.LOGIN_PAGE,
         context={},
     )
 
@@ -51,27 +109,16 @@ async def login_submit(
     if not valid_user:
         return templates.TemplateResponse(
             request=request,
-            name=auth_settings.LOGIN_PAGE,
+            name=AuthNav.LOGIN_PAGE,
             context={"error": "Invalid username or password."},
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
-    access_token_expires = timedelta(minutes=auth_settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     token = AuthSecurity.create_access_token(
         data={"sub": str(valid_user.id), "role": str(valid_user.role)},
-        expires_delta=access_token_expires,
     )
+    return AuthResponse.store_cookie_response(token)
 
-    response = RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
-    response.set_cookie(
-        key="access_token",
-        value=token.access_token,
-        httponly=True,        # JS cannot access this
-        secure=True,          # HTTPS only in production
-        samesite="lax",       # CSRF protection
-        max_age=auth_settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-    )
-    return response
 
 
 @page.get("/dashboard", name="dashboard_page", response_class=HTMLResponse, response_model=None)
@@ -84,7 +131,7 @@ async def dashboard(
 
     return templates.TemplateResponse(
         request=request,
-        name="dashboard.html",
+        name=AuthNav.DASHBOARD_PAGE,
         context={"user": current_user},
     )
 

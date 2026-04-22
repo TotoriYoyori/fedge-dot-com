@@ -43,17 +43,21 @@ class AuthSecurity:
         return password_hash.verify(plain_password, hashed_password)
 
     @staticmethod
+    def get_access_token_expires_at(
+        expires_delta: timedelta | None = None,
+    ) -> datetime:
+        if expires_delta is None:
+            expires_delta = timedelta(minutes=auth_settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+
+        return datetime.now(UTC) + expires_delta
+
+    @staticmethod
     def create_access_token(
         data: dict, expires_delta: timedelta | None = None
     ) -> Token:
         """Create a JWT access access_token."""
         to_encode = data.copy()
-        if expires_delta:
-            expire = datetime.now(UTC) + expires_delta
-        else:
-            expire = datetime.now(UTC) + timedelta(
-                minutes=auth_settings.ACCESS_TOKEN_EXPIRE_MINUTES
-            )
+        expire = AuthSecurity.get_access_token_expires_at(expires_delta)
         to_encode.update({"exp": expire})
         encoded_jwt = jwt.encode(
             to_encode,

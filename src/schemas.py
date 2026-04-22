@@ -3,8 +3,8 @@ from pathlib import Path
 from fastapi import status
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic.alias_generators import to_camel
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 
