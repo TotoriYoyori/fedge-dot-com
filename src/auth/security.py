@@ -8,7 +8,6 @@ from pwdlib import PasswordHash
 from src.auth.schemas import Token
 from src.auth.settings import auth_settings
 
-
 # --------------- GLOBAL INSTANCE
 password_hash = PasswordHash.recommended()
 

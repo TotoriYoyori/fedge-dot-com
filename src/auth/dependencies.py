@@ -18,6 +18,7 @@ from src.auth.security import AuthSecurity, oauth2_scheme
 from src.auth.service import AuthService
 from src.database import get_db
 
+
 # --------------- PRIVATE
 async def _verify_token(access_token: str, db: AsyncSession) -> User:
     """
