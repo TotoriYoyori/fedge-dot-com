@@ -1,17 +1,19 @@
 from datetime import timedelta
-from typing import Annotated
+from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 
+from src.templates import templates
 from src.auth.models import User
 from src.auth.security import AuthSecurity
-from src.auth.settings import auth_settings, auth_page
+from src.auth.settings import auth_settings
 from src.auth.dependencies import valid_login_credentials, valid_cookie_token
 
+# --------------- PAGE ROUTING
 page = APIRouter(tags=["ssr"])
 
-@page.get("/register", response_class=HTMLResponse, response_model=None)
+@page.get("/register", name="register_page", response_class=HTMLResponse, response_model=None)
 async def register_page(
     request: Request,
     current_user: Annotated[User | None, Depends(valid_cookie_token)],
@@ -19,14 +21,14 @@ async def register_page(
     if current_user:
         return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
 
-    return auth_page.TemplateResponse(
+    return templates.TemplateResponse(
         request=request,
         name=auth_settings.REGISTER_PAGE,
         context={},
     )
 
 
-@page.get("/login", response_class=HTMLResponse, response_model=None)
+@page.get("/login", name="login_page", response_class=HTMLResponse, response_model=None)
 async def login_page(
     request: Request,
     current_user: Annotated[User | None, Depends(valid_cookie_token)],
@@ -34,20 +36,20 @@ async def login_page(
     if current_user:
         return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
 
-    return auth_page.TemplateResponse(
+    return templates.TemplateResponse(
         request=request,
         name=auth_settings.LOGIN_PAGE,
         context={},
     )
 
 
-@page.post("/login", response_class=HTMLResponse, response_model=None)
+@page.post("/login", name="login_submit", response_class=HTMLResponse, response_model=None)
 async def login_submit(
     request: Request,
     valid_user: Annotated[User, Depends(valid_login_credentials)],
 ):
     if not valid_user:
-        return auth_page.TemplateResponse(
+        return templates.TemplateResponse(
             request=request,
             name=auth_settings.LOGIN_PAGE,
             context={"error": "Invalid username or password."},
@@ -72,43 +74,24 @@ async def login_submit(
     return response
 
 
-@page.get("/dashboard", response_class=HTMLResponse, response_model=None)
+@page.get("/dashboard", name="dashboard_page", response_class=HTMLResponse, response_model=None)
 async def dashboard(
     request: Request,
-    current_user: Annotated[User, Depends(valid_cookie_token)],
+    current_user: Annotated[Optional[User], Depends(valid_cookie_token)],
 ):
-    return auth_page.TemplateResponse(
-    request=request,
-    name="dashboard.html",
-    context={"user": current_user},
-)
+    if not current_user:
+        return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="dashboard.html",
+        context={"user": current_user},
+    )
 
 
-@page.post("/logout", response_model=None)
+@page.post("/logout", name="logout_page", response_model=None)
 async def logout():
     response = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
     response.delete_cookie("access_token")
+
     return response
-
-
-# @router.post("/register", response_class=HTMLResponse)
-# async def register_submit(
-#     request: Request,
-#     db: Annotated[AsyncSession, Depends(get_db)],
-# ):
-#     form = await request.form()
-#     auth_create = AuthCreate(
-#         username=form["username"],
-#         email=form["email"],
-#         password=form["password"],
-#     )
-#
-#     # reuse same service as your API route
-#     try:
-#         user = await AuthService.create(auth_create, db)
-#         return RedirectResponse(url="/auth/login", status_code=status.HTTP_303_SEE_OTHER)
-#     except Exception as e:
-#         return templates.TemplateResponse("auth/register.html", {
-#             "request": request,
-#             "error": str(e),
-#         })

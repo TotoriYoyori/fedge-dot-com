@@ -1,8 +1,3 @@
-from pathlib import Path
-
-from fastapi.templating import Jinja2Templates
-from jinja2 import Environment, FileSystemLoader
-
 from src.schemas import DomainSettings
 
 
@@ -53,8 +48,3 @@ class NotificationSettings(DomainSettings):
 
 
 notification_settings = NotificationSettings()
-
-notification_env = Environment(
-    loader=FileSystemLoader(notification_settings.TEMPLATES_DIR)
-)
-notification_page = Jinja2Templates(directory=notification_settings.TEMPLATES_DIR)

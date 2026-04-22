@@ -29,8 +29,8 @@ class AuthSecurity:
         >>> hashed = AuthSecurity.hash_password("my_secret")
         >>> AuthSecurity.verify_password("my_secret", hashed)
         True
-        >>> token = AuthSecurity.create_access_token({"sub": "user123"})
-        >>> AuthSecurity.verify_access_token(token)
+        >>> access_token = AuthSecurity.create_access_token({"sub": "user123"})
+        >>> AuthSecurity.verify_access_token(access_token)
         'user123'
     """
 
@@ -46,7 +46,7 @@ class AuthSecurity:
     def create_access_token(
         data: dict, expires_delta: timedelta | None = None
     ) -> Token:
-        """Create a JWT access token."""
+        """Create a JWT access access_token."""
         to_encode = data.copy()
         if expires_delta:
             expire = datetime.now(UTC) + expires_delta
@@ -79,7 +79,7 @@ class AuthSecurity:
 
     @staticmethod
     def verify_access_token(token: str) -> dict | None:
-        """Verify a JWT access token and return the payload if valid."""
+        """Verify a JWT access access_token and return the payload if valid."""
         try:
             payload = jwt.decode(
                 token,

@@ -1,7 +1,11 @@
 from pathlib import Path
+
+from fastapi import status
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic.alias_generators import to_camel
+
 
 
 class CustomBaseModel(BaseModel):
@@ -44,3 +48,32 @@ class DomainSettings(BaseSettings):
 
         object.__setattr__(self, "TEMPLATES_DIR", str(domain_path / "templates"))
         object.__setattr__(self, "STATIC_DIR", str(domain_path / "static"))
+
+
+class RouteDecoratorPreset:
+    """
+    A helper class to return common router kwargs for SSR pages.
+    """
+
+    @staticmethod
+    def html_get() -> dict:
+        return {
+            "response_model": None,
+            "response_class": HTMLResponse,
+            "status_code": status.HTTP_200_OK,
+            "responses": {
+                200: {"description": "HTML template rendered successfully"},
+                404: {"description": "HTML template rendered failed"},
+            },
+        }
+
+    @staticmethod
+    def html_post() -> dict:
+        return {
+            "response_model": None,
+            "response_class": HTMLResponse,
+            "status_code": status.HTTP_200_OK,
+            "responses": {
+                200: {"description": "HTML template rendered successfully"},
+            },
+        }

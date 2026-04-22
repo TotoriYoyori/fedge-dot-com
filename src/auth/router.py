@@ -58,7 +58,7 @@ async def register(
     summary="User login",
     description=(
         "Authenticates a user with a username and password. "
-        "If successful, returns a JWT access token used for accessing protected resources."
+        "If successful, returns a JWT access access_token used for accessing protected resources."
     ),
     response_model=Token,
     status_code=status.HTTP_200_OK,
@@ -73,7 +73,7 @@ async def login(
     valid_user: Annotated[User, Depends(valid_login_credentials)],
 ) -> Token | None:
     """
-    Login endpoint. Returns Bearer token on success.
+    Login endpoint. Returns Bearer access_token on success.
     """
     if not valid_user:
         return None
@@ -91,7 +91,7 @@ async def login(
     summary="Get current user details",
     description=(
         "Returns the detailed profile of the currently authenticated user. "
-        "Requires a valid JWT token in the Authorization header."
+        "Requires a valid JWT access_token in the Authorization header."
     ),
     response_model=UserPrivate,
     responses={

@@ -1,6 +1,5 @@
-from fastapi.templating import Jinja2Templates
-
 from src.schemas import DomainSettings
+
 
 # ----- CONFIG
 class LandingSettings(DomainSettings):
@@ -11,4 +10,3 @@ class LandingSettings(DomainSettings):
 
 # ----- DOMAIN INSTANCE
 landing_settings = LandingSettings()
-landing_page = Jinja2Templates(directory=landing_settings.TEMPLATES_DIR)

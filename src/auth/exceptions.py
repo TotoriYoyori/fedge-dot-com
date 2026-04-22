@@ -47,10 +47,10 @@ def register_exception_handlers(app) -> None:
 
     @app.exception_handler(MalformedToken)
     async def malformed_token_handler(request: Request, exc: MalformedToken):
-        """Raised when a JWT token is malformed or invalid."""
+        """Raised when a JWT access_token is malformed or invalid."""
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content={"detail": "Malformed token. Please log in and try again."},
+            content={"detail": "Malformed access_token. Please log in and try again."},
             headers={"WWW-Authenticate": "Bearer"},
         )
 

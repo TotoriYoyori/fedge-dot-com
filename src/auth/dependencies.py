@@ -1,6 +1,6 @@
 from typing import Annotated, Callable
 
-from fastapi import Cookie, Depends, HTTPException, status
+from fastapi import Cookie, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,15 +19,15 @@ from src.auth.service import AuthService
 from src.database import get_db
 
 # --------------- PRIVATE
-async def _verify_token(token: str | None, db: AsyncSession) -> User:
+async def _verify_token(access_token: str, db: AsyncSession) -> User:
     """
-    Shared core logic for token verification and user retrieval.
+    Shared core logic for access_token verification and user retrieval.
     Used by both Bearer (API) and cookie (SSR) auth flows.
     """
-    if not token:
+    if not access_token:
         raise UnauthenticatedUser
 
-    payload = AuthSecurity.verify_access_token(token)
+    payload = AuthSecurity.verify_access_token(access_token)
     if not payload:
         raise MalformedToken
 
@@ -51,7 +51,7 @@ async def valid_login_credentials(
 ) -> User:
     """
     Verifies user identity during the login process to ensure only users with valid
-    credentials can obtain an authentication token.
+    credentials can obtain an authentication access_token.
 
     :param login_form: The submitted username and password from the login request.
     :param db: The database session for user lookup.
@@ -71,12 +71,12 @@ async def valid_access_token(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
     """
-    Protects sensitive routes by validating the Bearer token and retrieving the
+    Protects sensitive routes by validating the Bearer access_token and retrieving the
     associated user to establish an authenticated context. For API clients.
 
-    :param token: The JWT access token provided in the Authorization header.
+    :param token: The JWT access access_token provided in the Authorization header.
     :param db: The database session for user retrieval.
-    :return: The authenticated User object associated with the token.
+    :return: The authenticated User object associated with the access_token.
     """
     return await _verify_token(token, db)
 
@@ -86,8 +86,6 @@ async def valid_cookie_token(
     access_token: Annotated[str | None, Cookie()] = None,
 ) -> User | None:
     """Returns User if logged in, None if not. Never raises."""
-    if not access_token:
-        return None
     try:
         return await _verify_token(access_token, db)
     except (UnauthenticatedUser, MalformedToken, UserNotFound):
@@ -119,7 +117,7 @@ async def authenticated_exists(
     Prevents already logged-in users from accessing authentication pages like login 
     or register to maintain clean navigation flow.
 
-    :param token: The access token from the request, if any.
+    :param token: The access access_token from the request, if any.
     :return: True if the user is not authenticated, allowing them to proceed.
     """
     if token and AuthSecurity.verify_access_token(token):

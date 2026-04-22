@@ -8,13 +8,13 @@ from src.schemas import CustomBaseModel
 # --------------- I/O SCHEMAS
 class Token(BaseModel):
     """
-    Schema for the authentication token response.
+    Schema for the authentication access_token response.
     """
 
     access_token: str = Field(
-        ..., description="The JWT access token used for authorization."
+        ..., description="The JWT access access_token used for authorization."
     )
-    token_type: str = Field(..., description="The type of the token (e.g., \"bearer\").")
+    token_type: str = Field(..., description="The type of the access_token (e.g., \"bearer\").")
 
 
 class AuthCreate(CustomBaseModel):

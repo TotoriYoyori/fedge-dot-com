@@ -3,23 +3,38 @@
 {% block title %}Home{% endblock %}
 
 {% block styles %}
-    <link rel="stylesheet" href="/static/landing/css/home.css">
+    <link rel="stylesheet" href="{{ request.url_for('landing-static', path='css/home.css') }}">
 {% endblock %}
 
 {% block body %}
     <header>
-        <a href="/" class="logo">Fedge</a>
-        <nav class="auth-buttons">
-            <a href="/login" class="btn btn-login">Login</a>
-            <a href="/register" class="btn btn-register">Register</a>
-        </nav>
+        <a href="{{ request.url_for('home_page') }}" class="logo">Fedge</a>
+        {% if current_user %}
+            <div class="user-summary">
+                <div class="avatar-placeholder" aria-hidden="true"></div>
+                <div class="user-meta">
+                    <span class="user-label">{{ current_user.role|title }}</span>
+                    <span class="user-name">{{ current_user.username }}</span>
+                </div>
+                <a href="{{ request.url_for('dashboard_page') }}" class="btn btn-register">Dashboard</a>
+            </div>
+        {% else %}
+            <nav class="auth-buttons">
+                <a href="{{ request.url_for('login_page') }}" class="btn btn-login">Login</a>
+                <a href="{{ request.url_for('register_page') }}" class="btn btn-register">Register</a>
+            </nav>
+        {% endif %}
     </header>
 
     <main>
         <h1>A New Way to Read</h1>
         <p>Experience your emails in a beautifully designed, focused environment. Inspired by tranquility, built for productivity.</p>
         <div class="hero-cta">
-            <a href="/register" class="btn btn-register">Get Started</a>
+            {% if current_user %}
+                <a href="{{ request.url_for('dashboard_page') }}" class="btn btn-register">Visit Dashboard</a>
+            {% else %}
+                <a href="{{ request.url_for('register_page') }}" class="btn btn-register">Get Started</a>
+            {% endif %}
         </div>
     </main>
 
@@ -29,5 +44,5 @@
 {% endblock %}
 
 {% block scripts %}
-    <script src="/static/landing/js/home.js"></script>
+    <script src="{{ request.url_for('landing-static', path='js/home.js') }}"></script>
 {% endblock %}

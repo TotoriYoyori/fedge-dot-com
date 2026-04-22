@@ -1,8 +1,8 @@
-{% extends "base.html" %}
+{% extends "auth_base.html" %}
 
 {% block title %}Register{% endblock %}
 
-{% block content %}
+{% block auth_content %}
 <div class="auth-container">
     <div class="auth-card">
         <h2>Register</h2>
@@ -25,7 +25,7 @@
         </form>
         
         <div class="auth-footer">
-            <p>Already have an account? <a href="/login">Login here</a></p>
+            <p>Already have an account? <a href="{{ request.url_for('login_page') }}">Login here</a></p>
         </div>
     </div>
 </div>

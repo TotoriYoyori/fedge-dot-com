@@ -1,8 +1,8 @@
-{% extends "base.html" %}
+{% extends "auth_base.html" %}
 
 {% block title %}Login{% endblock %}
 
-{% block content %}
+{% block auth_content %}
 <div class="auth-container">
     <div class="auth-card">
         <h2>Login</h2>
@@ -12,7 +12,7 @@
             <div class="alert alert-error">{{ error }}</div>
         {% endif %}
 
-        <form action="/login" method="post" class="auth-form">
+        <form action="{{ request.url_for('login_submit') }}" method="post" class="auth-form">
             <div class="form-group">
                 <label for="username">Username</label>
                 <input type="text" id="username" name="username" required placeholder="Enter your username">
@@ -25,7 +25,7 @@
         </form>
 
         <div class="auth-footer">
-            <p>Don't have an account? <a href="/register">Register here</a></p>
+            <p>Don't have an account? <a href="{{ request.url_for('register_page') }}">Register here</a></p>
         </div>
     </div>
 </div>

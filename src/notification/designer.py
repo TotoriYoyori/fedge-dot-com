@@ -1,18 +1,15 @@
 from fastapi import Request
 from jinja2 import Template
 
+from src.templates import page_env, templates
 from src.notification.schemas import SendContext, TemplateFormat
-from src.notification.settings import (
-    notification_settings,
-    notification_env,
-    notification_page,
-)
+from src.notification.settings import notification_settings
 
 
 class EmailDesigner:
     @staticmethod
     def write_email_html(context: SendContext) -> str:
-        template: Template = notification_env.get_template(
+        template: Template = page_env.get_template(
             notification_settings.DEFAULT_TEMPLATE_NAME
         )
         return template.render(
@@ -47,7 +44,7 @@ class EmailDesigner:
 
     @staticmethod
     def render_template_preview(request: Request, preview: TemplateFormat) -> str:
-        return notification_page.TemplateResponse(
+        return templates.TemplateResponse(
             request=request,
             name=notification_settings.DEFAULT_TEMPLATE_NAME,
             context=preview.model_dump(),

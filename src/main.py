@@ -47,6 +47,7 @@ app.add_middleware(
 # --------------- REGISTER STATIC FILES
 app.mount("/static/landing", StaticFiles(directory="src/landing/static"), name="landing-static")
 app.mount("/static/auth", StaticFiles(directory="src/auth/static"), name="auth-static")
+app.mount("/static", StaticFiles(directory="src/static"), name="static")
 
 # --------------- REGISTER ROUTER & SSR PAGES
 app.include_router(landing_page)

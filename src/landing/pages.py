@@ -1,37 +1,31 @@
-from typing import Annotated
+from typing import Annotated, Optional
 
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, Depends
 from fastapi.requests import Request
-from fastapi.responses import HTMLResponse, RedirectResponse
 
 from src.auth.dependencies import valid_cookie_token
 from src.auth.models import User
-from src.landing.settings import landing_settings, landing_page
+from src.landing.settings import landing_settings
+from src.templates import templates
+from src.schemas import RouteDecoratorPreset
 
-
-page = APIRouter(tags=['ssr'])
+# ---------------
+page = APIRouter(tags=["ssr"])
+# ---------------
 
 
 @page.get(
-    '/',
-    response_model=None,
-    response_class=HTMLResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Render the home landing page",
-    responses={
-        200: {"description": "HTML template rendered successfully"},
-        404: {"description": "HTML template rendered failed"},
-    },
+    "/",
+    name="home_page",
+    summary="Render the home page",
+    **RouteDecoratorPreset.html_get(),
 )
 async def home(
     request: Request,
-    current_user: Annotated[User | None, Depends(valid_cookie_token)],
+    current_user: Annotated[Optional[User], Depends(valid_cookie_token)],
 ):
-    if current_user:
-        return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
-
-    return landing_page.TemplateResponse(
+    return templates.TemplateResponse(
         request=request,
         name=landing_settings.HOME_PAGE,
-        context={},
+        context={"current_user": current_user},
     )

@@ -1,9 +1,8 @@
-from pydantic import SecretStr, computed_field
-from fastapi.templating import Jinja2Templates
+from pydantic import SecretStr
 
 from src.schemas import DomainSettings
 
-
+# FIXME: Implement a navigating enum instead of coupling with AuthSettings
 class AuthSettings(DomainSettings):
     LOGIN_PAGE: str = "login.html"
     REGISTER_PAGE: str = "register.html"
@@ -17,4 +16,3 @@ class AuthSettings(DomainSettings):
 
 # ----- DOMAIN INSTANCE
 auth_settings = AuthSettings()
-auth_page = Jinja2Templates(directory=auth_settings.TEMPLATES_DIR)
