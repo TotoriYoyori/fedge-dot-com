@@ -5,7 +5,7 @@ from fastapi.requests import Request
 
 from src.auth.dependencies import valid_cookie_token
 from src.auth.models import User
-from src.landing.settings import LandingNav
+from src.landing.redirect import LandingRedirect
 from src.schemas import RouteDecoratorPreset
 from src.templates import templates
 
@@ -26,6 +26,6 @@ async def home(
 ):
     return templates.TemplateResponse(
         request=request,
-        name=LandingNav.HOME_PAGE,
+        name=LandingRedirect.HOME_PAGE,
         context={"current_user": current_user},
     )
