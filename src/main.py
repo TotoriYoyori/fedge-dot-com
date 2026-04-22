@@ -1,5 +1,4 @@
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,10 +14,6 @@ from src.auth.pages import page as auth_page
 
 from src.auth.router import router as auth_router
 from src.notification.router import router as notification_router
-
-
-SRC_DIR = Path(__file__).resolve().parent
-
 
 # --------------- STARTUP AND SHUTDOWN LOGICS
 @asynccontextmanager
@@ -49,21 +44,9 @@ app.add_middleware(
 )
 
 # --------------- REGISTER STATIC FILES
-app.mount(
-    "/static/landing",
-    StaticFiles(directory=str(SRC_DIR / "landing" / "static")),
-    name="landing-static",
-)
-app.mount(
-    "/static/auth",
-    StaticFiles(directory=str(SRC_DIR / "auth" / "static")),
-    name="auth-static",
-)
-app.mount(
-    "/static",
-    StaticFiles(directory=str(SRC_DIR / "static")),
-    name="static",
-)
+app.mount("/static/landing", StaticFiles(directory="src/landing/static"), name="landing-static")
+app.mount("/static/auth", StaticFiles(directory="src/auth/static"), name="auth-static")
+app.mount("/static", StaticFiles(directory="src/static"), name="static")
 
 # --------------- REGISTER ROUTER & SSR PAGES
 app.include_router(landing_page)

@@ -3,7 +3,7 @@
 {% block title %}Home{% endblock %}
 
 {% block styles %}
-    <link rel="stylesheet" href="{{ request.url_for('landing-static', path='css/home.css') }}">
+    <link rel="stylesheet" href="/static/landing/css/home.css">
 {% endblock %}
 
 {% block body %}
@@ -44,5 +44,5 @@
 {% endblock %}
 
 {% block scripts %}
-    <script src="{{ request.url_for('landing-static', path='js/home.js') }}"></script>
+    <script src="/static/landing/js/home.js"></script>
 {% endblock %}
