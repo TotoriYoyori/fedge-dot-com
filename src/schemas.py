@@ -7,12 +7,19 @@ from pydantic.alias_generators import to_camel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-
+# --------------- API RESPONSE SCHEMAS BASE INHERITANCE
 class CustomBaseModel(BaseModel):
     """
-    Project-wide base model for all schemas with common configuration:
-    - Camel case alias generator for JSON compatibility.
-    - Allows populating fields by their original Python names.
+    Base model with shared configuration for all project schemas.
+
+    Features:
+        - CamelCase alias generation for JSON fields.
+        - Allows population by original Python field names.
+        - Supports initialization from object attributes.
+
+    Example:
+        >>> class APIResponse(CustomBaseModel):
+        ...     first_name: str
     """
 
     model_config = SettingsConfigDict(
@@ -22,10 +29,27 @@ class CustomBaseModel(BaseModel):
     )
 
 
+# --------------- MODULE CONFIGURATION BASE CLASS
 class DomainSettings(BaseSettings):
     """
-    Common configurations for domain-specific settings, such as reading from common environmental variables.
+    Base settings class for domain-level configuration.
+
+    Loads values from environment variables and a shared `.env` file,
+    providing defaults for template and static resource paths.
+
+    Attributes:
+        ENVIRONMENT (str): Current runtime environment (e.g., local, dev, prod).
+        TEMPLATES_DIR (str): Path to the templates' directory.
+        STATIC_DIR (str): Path to the static files' directory.
+        DEFAULT_TEMPLATE_NAME (str): Default template filename.
+
+    Example:
+        >>> class AuthSettings(DomainSettings):
+        >>>     SECRET_KEY: SecretStr
+        >>>     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
+        >>> assert AuthSettings.DEFAULT_TEMPLATE_NAME == "index.html"
     """
+
     ENVIRONMENT: str = "local"
     TEMPLATES_DIR: str = ""
     STATIC_DIR: str = ""
@@ -38,11 +62,8 @@ class DomainSettings(BaseSettings):
     )
 
     def model_post_init(self, __context):
-        """
-        Settings inheriting from DomainSettings will automatically resolve their directory. Keep in mind
-        this does mean each domain MUST contain a /static and /template directory.
-        """
         import sys
+
         module = sys.modules[self.__class__.__module__]
         domain_path = Path(module.__file__).resolve().parent
 
@@ -50,9 +71,19 @@ class DomainSettings(BaseSettings):
         object.__setattr__(self, "STATIC_DIR", str(domain_path / "static"))
 
 
+# --------------- REUSABLE API ROUTE CONFIGURATIONS
 class RouteDecoratorPreset:
     """
-    A helper class to return common router kwargs for SSR pages.
+    Provide reusable FastAPI route configuration presets for responses.
+
+    Available presets:
+        - html_get(): Preset for GET routes returning HTML.
+        - html_post(): Preset for POST routes returning HTML.
+
+    Example:
+        >>> preset = RouteDecoratorPreset.html_get()
+        >>> preset["status_code"]
+        200
     """
 
     @staticmethod

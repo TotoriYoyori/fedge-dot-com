@@ -57,3 +57,4 @@ tests/TODO.py
 src/dummies
 src/orders/sample
 .junie
+.uv-cache

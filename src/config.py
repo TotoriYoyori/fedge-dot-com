@@ -2,23 +2,25 @@ import datetime as dt
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import SecretStr, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-# --------------- FASTAPI APP CONFIGURATION
+# --------------- APP CONFIGURATION SETTINGS
 class Config(BaseSettings):
     """
     Central configuration for the FastAPI application.
 
-    Loads settings from environment variables and `.env`, including 1. database,
-    2. JWT authentication, 3. email services, and 4. Google OAuth configs.
+    Loads settings from environment variables and a `.env` file. Includes:
+    - Database configuration
+    - JWT authentication settings
+    - Email service configuration
+    - Google OAuth settings
 
-    Sensitive values should be stored securely in environment variables.
+    Sensitive values must be stored securely in environment variables and never hardcoded.
     """
 
     # ----- I. Default
-    APP_NAME: str = "Fedge FastAPI Backend"
+    APP_NAME: str = "Fedge"
     LATEST_UPDATE: str = dt.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
     APP_VERSION: str = "0.2"
 
@@ -28,17 +30,6 @@ class Config(BaseSettings):
     ENVIRONMENT: str = "local"
     ALLOW_ORIGINS: str = "*"
 
-    # ----- III. Paths
-    @computed_field
-    @property
-    def project_root(self) -> Path:
-        return Path(__file__).resolve().parent.parent
-
-    @computed_field
-    @property
-    def notification_static_dir(self) -> Path:
-        return self.project_root / "src" / "notification" / "static"
-
     # ----- IV. Meta Configuration
     model_config = SettingsConfigDict(
         env_file=Path(__file__).resolve().parent.parent / ".env",
@@ -47,9 +38,11 @@ class Config(BaseSettings):
     )
 
 
+# --------------- CONFIGURATION ACCESSORS
 @lru_cache
 def get_settings() -> Config:
     return Config()
 
 
+# --------------- SHARED CONFIGURATION OBJECT
 settings = Config()

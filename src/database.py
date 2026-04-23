@@ -1,4 +1,4 @@
-from typing import AsyncGenerator
+from typing import Annotated, AsyncGenerator
 
 from sqlalchemy import MetaData
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -6,7 +6,7 @@ from sqlalchemy.orm import DeclarativeBase
 
 from src.config import settings
 
-# ---------------- ALEMBIC MIGRATION NAMING CONVENTION
+# --------------- ALEMBIC MIGRATION NAMING CONVENTION
 NAMING_CONVENTION = {
     "ix": "%(column_0_label)s_idx",
     "uq": "%(table_name)s_%(column_0_name)s_key",
@@ -16,16 +16,31 @@ NAMING_CONVENTION = {
 }
 
 
-# ---------------- MODEL BASE
+# --------------- ORM ENTITY BASE CLASS
 class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
 
 
-# ---------------- DB FACTORY
+# --------------- ASYNC ENGINE AND SESSION FACTORY
 engine = create_async_engine(settings.DATABASE_URL, echo=settings.DB_ECHO)
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """
+    Provide an async database session for request handling.
+
+    This function is intended to be used as a FastAPI dependency.
+    It yields an SQLAlchemy AsyncSession and ensures proper cleanup
+    after the request is completed.
+
+    Yields:
+        AsyncSession: Active database session.
+
+    Example:
+        >>> async def endpoint(db: Annotated[AsyncSession, Depends(get_db)]):
+        ...     result = await db.execute(select(User))
+    """
+    # ----- Initialize Async Context
     async with AsyncSessionLocal() as session:
         yield session

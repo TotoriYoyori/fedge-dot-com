@@ -1,41 +1,44 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from src.auth import exceptions as auth_exceptions
+from src.auth.pages import page as auth_page
+from src.auth.router import router as auth_router
 from src.config import settings
 from src.database import Base, engine
-
-from src.auth import exceptions as auth_exceptions
-
 from src.landing.pages import page as landing_page
-from src.auth.pages import page as auth_page
-
-from src.auth.router import router as auth_router
 from src.notification.router import router as notification_router
 
-# --------------- STARTUP AND SHUTDOWN LOGICS
+
+# --------------- APPLICATION LIFECYCLE EVENTS
 @asynccontextmanager
-async def lifespan(fastapi: FastAPI):
+async def lifespan(_fastapi: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
     yield
 
-# --------------- APP INITIALIZATION
+
+# --------------- FASTAPI INSTANCE CONFIGURATION
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    openapi_url="/openapi.json" if settings.ENVIRONMENT in ("local", "staging") else None,
+    openapi_url=(
+        "/openapi.json" if settings.ENVIRONMENT in ("local", "staging") else None
+    ),
     lifespan=lifespan,
 )
 
 
-# --------------- REGISTER EXCEPTION HANDLERS
+# --------------- DOMAIN ERROR HANDLERS
 auth_exceptions.register_exception_handlers(app)
 
-# --------------- REGISTER MIDDLEWARE
+
+# --------------- GLOBAL REQUEST MIDDLEWARE
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOW_ORIGINS,
@@ -43,12 +46,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --------------- REGISTER STATIC FILES
-app.mount("/static/landing", StaticFiles(directory="src/landing/static"), name="landing-static")
-app.mount("/static/auth", StaticFiles(directory="src/auth/static"), name="auth-static")
-app.mount("/static", StaticFiles(directory="src/static"), name="static")
 
-# --------------- REGISTER ROUTER & SSR PAGES
+# --------------- ASSET MOUNTING POINTS
+BASE_DIR = Path(__file__).resolve().parent
+
+app.mount(
+    "/static/landing",
+    StaticFiles(directory=BASE_DIR / "landing" / "static"),
+    name="landing-static",
+)
+app.mount(
+    "/static/auth",
+    StaticFiles(directory=BASE_DIR / "auth" / "static"),
+    name="auth-static",
+)
+app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
+
+# --------------- API ROUTE REGISTRATION
 app.include_router(landing_page)
 app.include_router(auth_page)
 

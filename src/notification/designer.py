@@ -1,9 +1,9 @@
 from fastapi import Request
 from jinja2 import Template
 
-from src.templates import page_env, templates
 from src.notification.schemas import SendContext, TemplateFormat
 from src.notification.settings import notification_settings
+from src.templates import page_env, templates
 
 
 class EmailDesigner:
