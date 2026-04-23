@@ -17,7 +17,7 @@ env
 .env.*
 
 # Dev dependencies (not needed in image)
-requirements/dev.txt
+tests/requirements/dev.txt
 
 # Tests (not needed in production image)
 /tests
