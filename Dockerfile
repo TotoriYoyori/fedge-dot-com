@@ -15,16 +15,15 @@ ENV UV_LINK_MODE=copy
 ENV UV_NO_DEV=1
 
 # --------------- PACKAGE DEPENDENCIES
-RUN --mount=type=cache,target=/root/.cache/uv \
+RUN --mount=type=cache,id=fedge-uv-cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --locked --no-install-project
 
-
 # --------------- INSTALL PROJECT
 COPY --chown=nonroot:nonroot . .
 
-RUN --mount=type=cache,target=/root/.cache/uv \
+RUN --mount=type=cache,id=fedge-uv-cache,target=/root/.cache/uv \
     uv sync --locked
 
 # --------------- PLACE EXE PATH
