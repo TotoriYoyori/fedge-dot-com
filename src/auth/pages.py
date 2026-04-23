@@ -12,7 +12,6 @@ from src.auth.exceptions import InvalidFormData, UsernameAlreadyExists
 from src.auth.models import User
 from src.auth.redirect import AuthRedirect
 from src.auth.schemas import AuthCreate
-from src.auth.security import AuthSecurity
 from src.auth.service import AuthService
 from src.database import get_db
 from src.schemas import RouteDecoratorPreset
@@ -68,11 +67,8 @@ async def register_submit(
         raise UsernameAlreadyExists
 
     created_user = await AuthService.create(auth_create, db)
-    token = AuthSecurity.create_access_token(
-        data={"sub": str(created_user.id), "role": str(created_user.role)},
-    )
 
-    return AuthRedirect.store_cookie(token)
+    return AuthRedirect.create_cookie(created_user)
 
 
 @page.get(
@@ -109,10 +105,7 @@ async def login_submit(
     if current_user:
         return AuthRedirect.to_home()
 
-    token = AuthSecurity.create_access_token(
-        data={"sub": str(valid_user.id), "role": str(valid_user.role)},
-    )
-    return AuthRedirect.store_cookie(token)
+    return AuthRedirect.create_cookie(valid_user)
 
 
 @page.get(

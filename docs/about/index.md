@@ -24,17 +24,21 @@ FEDGE is organized to be scalable, maintainable, and easy to navigate. Here is t
 │   ├── landing/        # Domain: Landing pages and SSR content
 │   ├── notification/   # Domain: Email engine & Template designer
 │   ├── orders/         # Domain: Order processing logic
+│   ├── static/         # Global static assets
+│   ├── templates/      # Global templates (base layouts, shared partials)
 │   ├── users/          # Domain: User management
 │   ├── config.py       # Global configuration management
 │   ├── database.py     # Database engine and session setup
 │   ├── main.py         # App entry point and router registration
-│   └── schemas.py      # Global base schemas and settings classes
+│   ├── schemas.py      # Global base schemas and settings classes
+│   └── templates.py    # Jinja2 template engine & discovery logic
 ├── tests/              # Automated test suites mirroring src/
 ├── alembic.ini         # Alembic configuration
 ├── docker-compose.yml  # Docker orchestration (if applicable)
-├── Dockerfile          # Container definition
+├── Dockerfile          # Container definition (UV-optimized)
 ├── mkdocs.yml          # Documentation configuration
-└── pyproject.toml      # Build system and tool configuration
+├── pyproject.toml      # Build system and tool configuration (UV)
+└── uv.lock             # Deterministic dependency lockfile (UV)
 ```
 
 ---
@@ -50,7 +54,8 @@ A typical domain module (e.g., `src/auth/`) is composed of the following compone
 | File | Role | Description |
 | :--- | :--- | :--- |
 | `router.py` | **The Face** | Defines API endpoints using `APIRouter`. Maps HTTP requests to service functions. |
-| `pages.py` | **The View** | (Optional) Contains routes for Server-Side Rendering (SSR) that return `HTMLResponse`. |
+| `pages.py` | **The View** | Contains routes for Server-Side Rendering (SSR) that return `HTMLResponse`. |
+| `redirect.py` | **The Guide** | (Optional) Domain-specific redirect helpers (e.g., `AuthRedirect`) for SSR flows. |
 | `service.py` | **The Brain** | Houses business logic. It remains independent of FastAPI dependencies and focuses on data processing. |
 | `models.py` | **The Skeleton** | SQLAlchemy ORM models defining the database schema for this domain. |
 | `schemas.py` | **The Filter** | Pydantic models for request validation (Input) and response serialization (Output). |
@@ -71,7 +76,16 @@ from src.notification import schemas as notification_schemas
 
 ---
 
-## Environment Configuration 🔐
+## 3. Server-Side Rendering (SSR) Support 🖥️
+
+FEDGE supports full Server-Side Rendering (SSR) using Jinja2 templates. To keep this guide focused on general 
+architecture, we have dedicated a separate section for SSR implementation details.
+
+👉 **[Read the SSR Support Guide](../ssr/index.md)**
+
+---
+
+## 4. Environment Configuration 🔐
 
 ### `.env`
 We use `.env` files to manage secrets and environment-specific settings. 
@@ -112,6 +126,6 @@ Always use **Dependency Injection** (like `get_db`) to make your code "testable.
 By following this structure, we ensure that:
 1. **New developers** can find code easily.
 2. **The app** remains fast and async-first.
-3. **Deployment** is predictable and secure.
+3. **Deployment** is predictable and secure using **UV** and **Docker**.
 
 Now that you know the architecture, you're ready to start building! 🛠️✨

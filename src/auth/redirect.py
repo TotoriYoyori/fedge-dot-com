@@ -1,7 +1,9 @@
 from fastapi import status
 from fastapi.responses import RedirectResponse
 
+from src.auth.models import User
 from src.auth.schemas import Token
+from src.auth.security import AuthSecurity
 from src.auth.settings import auth_settings
 
 
@@ -39,24 +41,28 @@ class AuthRedirect:
         return response
 
     @staticmethod
-    def store_cookie(token: Token) -> RedirectResponse:
+    def create_cookie(user: User) -> RedirectResponse:
         """
-        Store a JWT access token in an HTTP-only cookie AND redirect the user to home.
+        Create and store a JWT access token in an HTTP-only cookie AND redirect the user to home.
 
         Args:
-            token (Token): The JWT token object containing the access token string.
+            user (User): A User object.
 
         Returns:
             RedirectResponse: A redirect response to "/" with an authentication cookie set.
 
         Example:
-            >>> token = Token(access_token="random.jwt.token", token_type="bearer")
-            >>> response = AuthRedirect.store_cookie(token)
+            >>> user = User(id=1, role="user")
+            >>> response = AuthRedirect.create_cookie(user)
             >>> response.status_code
             303
             >>> "access_token" in response.headers.get("set-cookie", "")
             True
         """
+        token = AuthSecurity.create_access_token(
+            data={"sub": str(user.id), "role": str(user.role)},
+        )
+
         response = AuthRedirect.to_home()
         response.set_cookie(
             key="access_token",

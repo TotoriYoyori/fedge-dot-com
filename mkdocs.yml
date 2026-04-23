@@ -54,6 +54,17 @@ nav:
       - database/database-setup.md
       - database/alembic-setup.md
       - database/performing-migration.md
+    - SSR Support:
+      - Overview: ssr/index.md
+      - Page Routes: ssr/pages.md
+      - Redirect Responses: ssr/redirect.md
+      - Template Files: ssr/templates.md
+      - Static Files: ssr/static.md
+      - Other: ssr/other.md
+    - Deployment:
+      - Overview: deploy/index.md
+      - UV Package Manager: deploy/uv.md
+      - Dockerization: deploy/docker.md
     - Google Integration:
       - google-oauth2/index.md
       - Glossary: google-oauth2/glossary.md
