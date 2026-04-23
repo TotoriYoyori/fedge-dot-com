@@ -28,14 +28,10 @@ AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """
-    Provide an async database session for request handling.
-
-    This function is intended to be used as a FastAPI dependency.
-    It yields an SQLAlchemy AsyncSession and ensures proper cleanup
-    after the request is completed.
+    Provide an async database session for request handling. Use as dependency injector only.
 
     Yields:
-        AsyncSession: Active database session.
+        AsyncSession: Active database session. Will cleanup after finish.
 
     Example:
         >>> async def endpoint(db: Annotated[AsyncSession, Depends(get_db)]):

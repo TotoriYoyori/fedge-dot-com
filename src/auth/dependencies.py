@@ -19,11 +19,15 @@ from src.auth.service import AuthService
 from src.database import get_db
 
 
-# --------------- PRIVATE
+# --------------- TOKEN VERIFICATION INTERNALS
 async def _verify_token(access_token: str, db: AsyncSession) -> User:
     """
-    Shared core logic for access_token verification and user retrieval.
-    Used by both Bearer (API) and cookie (SSR) auth flows.
+    Private token verifier. For both API and SSR flow.
+
+    Raises:
+        UnauthenticatedUser: If the token is missing.
+        MalformedToken: If the token is invalid or malformed.
+        UserNotFound: If no user matches the token payload.
     """
     if not access_token:
         raise UnauthenticatedUser
@@ -45,18 +49,22 @@ async def _verify_token(access_token: str, db: AsyncSession) -> User:
     return user
 
 
-# --------------- ORM-RETURNING VALIDATION (valid_*, required_role)
+# --------------- USER AUTHENTICATION DEPENDENCIES
 async def valid_login_credentials(
     login_form: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
     """
-    Verifies user identity during the login process to ensure only users with valid
-    credentials can obtain an authentication access_token.
+    Validate username and password from an urlencoded form. Use as dependency injection only.
 
-    :param login_form: The submitted username and password from the login request.
-    :param db: The database session for user lookup.
-    :return: The authenticated User object if credentials are valid.
+    Raises:
+        UnauthenticatedUser: If the username does not exist or the password is invalid.
+
+    Example:
+        >>> async def login(valid_user: Annotated[User, Depends(valid_login_credentials)]):
+        >>>    if not valid_user:
+        >>>        return None
+        >>>    return valid_user
     """
     user = await AuthService.get_one_by("username", login_form.username, db)
     if not user or not AuthSecurity.verify_password(
@@ -72,12 +80,16 @@ async def valid_access_token(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
     """
-    Protects sensitive routes by validating the Bearer access_token and retrieving the
-    associated user to establish an authenticated context. For API clients.
+    Validate a JWT access token embedded in Headers from request. Use as dependency injection only.
 
-    :param token: The JWT access access_token provided in the Authorization header.
-    :param db: The database session for user retrieval.
-    :return: The authenticated User object associated with the access_token.
+    Raises:
+        UnauthenticatedUser: If the token is missing.
+        MalformedToken: If the token is invalid or malformed.
+        UserNotFound: If no user matches the token payload.
+
+    Example:
+        >>> async def me(authorized_user: Annotated[User, Depends(valid_access_token)]):
+        >>>     return authorized_user
     """
     return await _verify_token(token, db)
 
@@ -86,7 +98,19 @@ async def valid_cookie_token(
     db: Annotated[AsyncSession, Depends(get_db)],
     access_token: Annotated[str | None, Cookie()] = None,
 ) -> User | None:
-    """Returns User if logged in, None if not. Never raises."""
+    """
+    Validate a JWT access token sent from browser cookies. Use as dependency injection only.
+
+    Note:
+        This function never raises authentication-related exceptions. Invalid,
+        missing, or malformed tokens will result in None.
+
+    Example:
+        >>> async def register_page(request: Request, current_user: Annotated[User | None, Depends(valid_cookie_token)]):
+        >>>     if current_user:
+        >>>         return AuthRedirect.to_home()
+        >>>     return templates.TemplateResponse()
+    """
     try:
         return await _verify_token(access_token, db)
     except (UnauthenticatedUser, MalformedToken, UserNotFound):
@@ -95,13 +119,26 @@ async def valid_cookie_token(
 
 def require_role(*roles: str, use_cookie: bool = False) -> Callable:
     """
-    Enforces specific authorization levels across different routes to restrict 
-    access based on user permissions. Use cookies for SSR-flows and no cookies for API route.
+    Enforce role-based access control. Orchestrate either valid_access_token or valid_cookie_token.
+    Use as dependency injection only.
 
-    :param roles: One or more role names permitted to access the resource.
-    :param use_cookie: Whether to use cookie or not.
-    :return: A dependency function that validates the user's role. Will return the current user
-    at the end of the flow in addition to roles.
+    Args:
+        *roles (str): One or more role names permitted to access the resource.
+        use_cookie (bool): If True, use cookie-based authentication (SSR).
+            Otherwise, use Bearer token authentication (API).
+
+    Returns:
+        Callable: A dependency function checker() that validates the user's role and
+        returns the authenticated user or raises.
+
+    Raises:
+        InsufficientPermission: If the authenticated user does not have one of the required roles.
+
+    Example:
+        >>> async def send_notify_email(
+        >>>     valid_user: Annotated[User, Depends(require_role("merchant", "admin"))],
+        >>>     send_context: SendContext
+        >>> ) -> None:
     """
     check_cookie_or_token = valid_cookie_token if use_cookie else valid_access_token
 
@@ -113,33 +150,42 @@ def require_role(*roles: str, use_cookie: bool = False) -> Callable:
     return checker
 
 
-# --------------- EXISTENCE BOOL CHECKER (*_exists)
-async def authenticated_exists(
+# --------------- AUTHENTICATION STATUS CHECKS
+async def not_currently_logged_in(
     token: Annotated[str | None, Depends(oauth2_scheme)],
 ) -> bool | None:
     """
-    Prevents already logged-in users from accessing authentication pages like login 
-    or register to maintain clean navigation flow.
+    Prevent authenticated users from accessing public auth routes (e.g., login, register) by checking JWT token
+    embedded in Headers. Use as dependency injection only.
 
-    :param token: The access access_token from the request, if any.
-    :return: True if the user is not authenticated, allowing them to proceed.
+    Raises:
+        AlreadyAuthenticated: If a valid token is present, indicating the user is already logged in.
+
+    Example:
+        >>> @router.post("/", dependencies=[Depends(not_currently_logged_in)])
+        >>> async def register():
     """
     if token and AuthSecurity.verify_access_token(token):
         raise AlreadyAuthenticated
 
     return True
 
+
 async def username_already_exists(
     auth_create: AuthCreate,
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> bool:
     """
-    Ensures data integrity during registration by checking if a username is already
-    taken before attempting to create a new account.
+    Check if a username already exists during registration by checking JSON payload's username entry.
+    Use as dependency injection only.
 
-    :param auth_create: The registration data containing the requested username.
-    :param db: The database session for checking existing records.
-    :return: False if the username is available.
+    Raises:
+        UsernameAlreadyExists: If the username is already taken.
+
+    Example:
+        >>> async def register(
+        >>>     username_taken: Annotated[bool, Depends(username_already_exists)],
+        >>> ) -> User | None:
     """
     user = await AuthService.get_one_by("username", auth_create.username, db)
     if user:

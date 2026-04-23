@@ -18,14 +18,15 @@ from src.database import get_db
 from src.schemas import RouteDecoratorPreset
 from src.templates import templates
 
-# --------------- PAGE ROUTING
+# --------------- SSR PAGE ROUTER
 page = APIRouter(tags=["ssr"])
+
 
 @page.get(
     "/register",
     name="register_page",
     summary="Renders the page where user can register a new account",
-    **RouteDecoratorPreset.html_get()
+    **RouteDecoratorPreset.html_get(),
 )
 async def register_page(
     request: Request,
@@ -101,12 +102,12 @@ async def login_page(
     **RouteDecoratorPreset.html_post(),
 )
 async def login_submit(
-    request: Request,
+    _request: Request,
     current_user: Annotated[User | None, Depends(valid_cookie_token)],
     valid_user: Annotated[User, Depends(valid_login_credentials)],
 ):
-    # if current_user:
-    #     return AuthRedirect.to_home()
+    if current_user:
+        return AuthRedirect.to_home()
 
     token = AuthSecurity.create_access_token(
         data={"sub": str(valid_user.id), "role": str(valid_user.role)},

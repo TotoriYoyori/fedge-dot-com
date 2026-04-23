@@ -3,6 +3,7 @@ from pydantic import SecretStr
 from src.schemas import DomainSettings
 
 
+# --------------- AUTH MODULE CONFIGURATION
 class AuthSettings(DomainSettings):
     SECRET_KEY: SecretStr
     ALGORITHM: str = "HS256"
@@ -10,5 +11,6 @@ class AuthSettings(DomainSettings):
 
     DEV_ROLE_KEYS: str = "{}"
 
-# ----- DOMAIN INSTANCE
+
+# --------------- SHARED AUTHENTICATION SETTINGS
 auth_settings = AuthSettings()

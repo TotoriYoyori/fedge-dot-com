@@ -44,7 +44,7 @@ extra_css:
 
 # Navigation structure
 nav:
-  - FEDGE: index.md
+  - FEDGE: README.md
   - ABOUT: about/index.md
   - LEARN:
     - learn/index.md

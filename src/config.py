@@ -11,10 +11,8 @@ class Config(BaseSettings):
     Central configuration for the FastAPI application.
 
     Loads settings from environment variables and a `.env` file. Includes:
-    - Database configuration
-    - JWT authentication settings
-    - Email service configuration
-    - Google OAuth settings
+    - Database configuration.
+    - CORS configuration for allowing different origins.
 
     Sensitive values must be stored securely in environment variables and never hardcoded.
     """

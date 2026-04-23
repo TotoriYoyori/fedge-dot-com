@@ -8,7 +8,7 @@
         <h2>Register</h2>
         <p>Create an account to start your journey.</p>
         
-        <form action="/register" method="post" class="auth-form">
+        <form action="{{ request.url_for('register_submit') }}" method="post" class="auth-form">
             <div class="form-group">
                 <label for="username">Username</label>
                 <input type="text" id="username" name="username" required placeholder="Choose a username">

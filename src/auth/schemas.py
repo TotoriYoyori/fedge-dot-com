@@ -5,21 +5,34 @@ from pydantic import BaseModel, EmailStr, Field
 from src.schemas import CustomBaseModel
 
 
-# --------------- I/O SCHEMAS
+# --------------- AUTH DOMAIN SCHEMAS
 class Token(BaseModel):
     """
-    Schema for the authentication access_token response.
+    Schema for a JWT access token.
+
+    Example:
+        >>> {"access_token": "random.jwt.token", "token_type": "bearer"}
     """
 
     access_token: str = Field(
         ..., description="The JWT access access_token used for authorization."
     )
-    token_type: str = Field(..., description="The type of the access_token (e.g., \"bearer\").")
+    token_type: str = Field(
+        ..., description='The type of the access_token (e.g., "bearer").'
+    )
 
 
 class AuthCreate(CustomBaseModel):
     """
-    Schema for creating a new user registration.
+    Schema used when registering a new user.
+
+    Example:
+        >>> {
+        ...     "username": "john_doe",
+        ...     "email": "john@example.com",
+        ...     "password": "securepassword123",
+        ...     "role_key": None
+        ... }
     """
 
     username: str = Field(
@@ -40,7 +53,16 @@ class AuthCreate(CustomBaseModel):
 
 class AuthResponse(CustomBaseModel):
     """
-    Schema for the response sent after successful registration or login.
+    Schema for the response returned after successful registration or login.
+
+    Example:
+        >>> {
+        ...     "id": 1,
+        ...     "authentication_time": "2026-04-23 12-30-45",
+        ...     "username": "john_doe",
+        ...     "email": "john@example.com",
+        ...     "role": "user"
+        ... }
     """
 
     id: int = Field(..., description="The unique identifier of the user.")
@@ -58,7 +80,7 @@ class AuthResponse(CustomBaseModel):
         ..., description="The email address of the authenticated user."
     )
     role: str = Field(
-        ..., description="The role of the authenticated user (e.g., \"user\", \"admin\")."
+        ..., description='The role of the authenticated user (e.g., "user", "admin").'
     )
 
 

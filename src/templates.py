@@ -12,12 +12,6 @@ def _discover_dirs(folder_name: str) -> list[str]:
     """
     Search the source directory and its immediate subdirectories for matching folder_name.
 
-    Args:
-        folder_name (str): Name of the folder to search for.
-
-    Returns:
-        list[str]: List of matching directory paths.
-
     Example:
         >>> _discover_dirs("templates")
         ['.../project/templates',

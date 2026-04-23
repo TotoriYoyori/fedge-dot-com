@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.dependencies import (
-    authenticated_exists,
+    not_currently_logged_in,
     username_already_exists,
     valid_access_token,
     valid_login_credentials,
@@ -15,7 +15,7 @@ from src.auth.security import AuthSecurity
 from src.auth.service import AuthService
 from src.database import get_db
 
-# --------------- ROUTER FOR USER-RELATED AUTHENTICATION
+# --------------- API AUTHENTICATION ROUTER
 router = APIRouter(prefix="/auth", tags=["api-auth"])
 
 
@@ -23,7 +23,7 @@ router = APIRouter(prefix="/auth", tags=["api-auth"])
     "/register",
     summary="Register a new user",
     description=(
-        "Registers a new user into the system. It checks if the username is already taken. "
+        "Registers a new user. Expects username, email, and password. It checks if the username is already taken. "
         "If a valid `role_key` is provided, the user is assigned a specific role (e.g., admin, editor), "
         "otherwise, the default role is 'user'."
     ),
@@ -35,16 +35,13 @@ router = APIRouter(prefix="/auth", tags=["api-auth"])
         403: {"description": "Already authenticated"},
         409: {"description": "Username already exists"},
     },
-    dependencies=[Depends(authenticated_exists)],
+    dependencies=[Depends(not_currently_logged_in)],
 )
 async def register(
     auth_create: AuthCreate,
     username_taken: Annotated[bool, Depends(username_already_exists)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User | None:
-    """
-    User registration flow. Expects username, email, and password.
-    """
     if username_taken:
         return None
 
@@ -65,14 +62,11 @@ async def register(
         401: {"description": "Invalid credentials"},
         403: {"description": "Already authenticated"},
     },
-    dependencies=[Depends(authenticated_exists)],
+    dependencies=[Depends(not_currently_logged_in)],
 )
 async def login(
     valid_user: Annotated[User, Depends(valid_login_credentials)],
 ) -> Token | None:
-    """
-    Login endpoint. Returns Bearer access_token on success.
-    """
     if not valid_user:
         return None
 
@@ -90,7 +84,10 @@ async def login(
     ),
     response_model=UserPrivate,
     responses={
-        200: {"model": UserPrivate, "description": "Successfully retrieved user profile"},
+        200: {
+            "model": UserPrivate,
+            "description": "Successfully retrieved user profile",
+        },
         401: {"description": "Unauthorized access"},
         403: {"description": "Insufficient permissions"},
         404: {"description": "User not found"},
@@ -99,7 +96,4 @@ async def login(
 async def me(
     authorized_user: Annotated[User, Depends(valid_access_token)],
 ):
-    """
-    Authenticated profile endpoint.
-    """
     return authorized_user

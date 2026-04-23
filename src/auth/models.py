@@ -6,7 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from src.database import Base
 
 
-# --------------- OFFICIAL FEDGE USERS MODEL
+# --------------- AUTH DOMAIN MODELS
 class User(Base):
     __tablename__ = "users"
 
@@ -23,4 +23,7 @@ class User(Base):
         return f"Username: {self.username} | Email: {self.email} {type(self)}"
 
     def __repr__(self) -> str:
-        return f"User(username={self.username!r}, email={self.email!r})"
+        return (
+            f"User(id={self.id!r}, username={self.username!r}, "
+            f"email={self.email!r}, role={self.role!r})"
+        )

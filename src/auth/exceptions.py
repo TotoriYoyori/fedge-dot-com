@@ -5,6 +5,7 @@ from src.auth.redirect import AuthRedirect
 from src.templates import templates
 
 
+# --------------- DOMAIN-SPECIFIC EXCEPTIONS
 class UsernameAlreadyExists(Exception):
     pass
 
@@ -33,6 +34,7 @@ class InsufficientPermission(Exception):
     pass
 
 
+# --------------- EXCEPTION HANDLER INTERNALS
 def _is_browser_request(request: Request) -> bool:
     return "text/html" in request.headers.get("accept", "")
 
@@ -46,9 +48,10 @@ def _render_error(request: Request, page: str, error: str, status_code: int):
     )
 
 
+# --------------- FASTAPI EXCEPTION HANDLERS
 def register_exception_handlers(app) -> None:
     @app.exception_handler(InvalidFormData)
-    async def invalid_form_data_handler(request: Request, exc: InvalidFormData):
+    async def invalid_form_data_handler(request: Request, _exc: InvalidFormData):
         if _is_browser_request(request):
             return _render_error(
                 request,
@@ -63,7 +66,7 @@ def register_exception_handlers(app) -> None:
 
     @app.exception_handler(UsernameAlreadyExists)
     async def username_already_exists_handler(
-        request: Request, exc: UsernameAlreadyExists
+        request: Request, _exc: UsernameAlreadyExists
     ):
         if _is_browser_request(request):
             return _render_error(
@@ -78,9 +81,7 @@ def register_exception_handlers(app) -> None:
         )
 
     @app.exception_handler(UnauthenticatedUser)
-    async def unauthenticated_user_handler(
-        request: Request, exc: UnauthenticatedUser
-    ):
+    async def unauthenticated_user_handler(request: Request, _exc: UnauthenticatedUser):
         if _is_browser_request(request):
             return _render_error(
                 request,
@@ -95,7 +96,7 @@ def register_exception_handlers(app) -> None:
         )
 
     @app.exception_handler(MalformedToken)
-    async def malformed_token_handler(request: Request, exc: MalformedToken):
+    async def malformed_token_handler(request: Request, _exc: MalformedToken):
         if _is_browser_request(request):
             return AuthRedirect.to_home()
         return JSONResponse(
@@ -105,7 +106,7 @@ def register_exception_handlers(app) -> None:
         )
 
     @app.exception_handler(UserNotFound)
-    async def user_not_found_handler(request: Request, exc: UserNotFound):
+    async def user_not_found_handler(request: Request, _exc: UserNotFound):
         if _is_browser_request(request):
             return AuthRedirect.to_home()
         return JSONResponse(
@@ -115,7 +116,7 @@ def register_exception_handlers(app) -> None:
 
     @app.exception_handler(AlreadyAuthenticated)
     async def already_authenticated_handler(
-        request: Request, exc: AlreadyAuthenticated
+        request: Request, _exc: AlreadyAuthenticated
     ):
         if _is_browser_request(request):
             return AuthRedirect.to_home()
@@ -126,7 +127,7 @@ def register_exception_handlers(app) -> None:
 
     @app.exception_handler(InsufficientPermission)
     async def insufficient_permission_handler(
-        request: Request, exc: InsufficientPermission
+        request: Request, _exc: InsufficientPermission
     ):
         if _is_browser_request(request):
             return AuthRedirect.to_home()
