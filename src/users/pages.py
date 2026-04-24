@@ -27,7 +27,7 @@ async def dashboard(
     if not current_user:
         return AuthRedirect.to_home()
 
-    if current_user.id != user_id or current_user.role not in ['merchant', 'admin']:
+    if current_user.id != user_id and current_user.role != 'admin':
         return UserRedirect.to_dashboard(current_user.id)
 
     return templates.TemplateResponse(

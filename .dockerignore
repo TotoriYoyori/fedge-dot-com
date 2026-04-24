@@ -50,7 +50,6 @@ mkdocs.yml
 src/dummies
 src/google
 src/orders
-src/users
 
 # --- Files and Databases
 db.sqlite3
