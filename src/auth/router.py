@@ -39,12 +39,9 @@ router = APIRouter(prefix="/auth", tags=["api-auth"])
 )
 async def register(
     auth_create: AuthCreate,
-    username_taken: Annotated[bool, Depends(username_already_exists)],
+    _username_taken: Annotated[bool, Depends(username_already_exists)],
     db: Annotated[AsyncSession, Depends(get_db)],
-) -> User | None:
-    if username_taken:
-        return None
-
+) -> User:
     return await AuthService.create(auth_create, db)
 
 
@@ -66,10 +63,7 @@ async def register(
 )
 async def login(
     valid_user: Annotated[User, Depends(valid_login_credentials)],
-) -> Token | None:
-    if not valid_user:
-        return None
-
+) -> Token:
     return AuthSecurity.create_access_token(
         data={"sub": str(valid_user.id), "role": str(valid_user.role)},
     )

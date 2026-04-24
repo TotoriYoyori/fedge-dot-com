@@ -26,6 +26,7 @@ dependencies = [
     "pwdlib==0.3.0",
     "pwdlib[argon2]",
     "pyjwt==2.12.1",
+    "resend>=2.29.0",
 ]
 
 [dependency-groups]

@@ -4,8 +4,10 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
-from src.auth import exceptions as auth_exceptions
+from src.auth.exceptions import AuthExceptionHandler
+from src.notification.exceptions import NotificationExceptionHandler
 from src.auth.pages import page as auth_page
 from src.auth.router import router as auth_router
 from src.config import settings
@@ -35,7 +37,8 @@ app = FastAPI(
 
 
 # --------------- DOMAIN ERROR HANDLERS
-auth_exceptions.register_exception_handlers(app)
+AuthExceptionHandler(app)
+NotificationExceptionHandler(app)
 
 
 # --------------- GLOBAL REQUEST MIDDLEWARE
@@ -46,6 +49,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
 # --------------- ASSET MOUNTING POINTS
 BASE_DIR = Path(__file__).resolve().parent

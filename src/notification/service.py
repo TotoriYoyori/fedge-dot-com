@@ -5,7 +5,9 @@ from email.utils import formataddr, formatdate, make_msgid
 import smtplib
 
 import asyncer
+import resend
 
+from src.notification.exceptions import ResendEmailDeliveryError
 from src.notification.designer import EmailDesigner
 from src.notification.schemas import SendContext, SendResponse
 from src.notification.settings import notification_settings as ns
@@ -26,11 +28,35 @@ class EmailService:
 
         :param send_context: Delivery metadata and template context for the email.
         """
-        await asyncer.asyncify(EmailService._send_sync)(send_context)
+        await asyncer.asyncify(EmailService._resend_send)(send_context)
         return SendResponse()
 
     @staticmethod
-    def _send_sync(send_context: SendContext) -> None:
+    def _resend_send(send_context: SendContext) -> None:
+        """Send an email using the Resend API."""
+        resend.api_key = ns.RESEND_API_KEY
+
+        html_body = EmailDesigner.write_email_html(send_context)
+        plain_body = EmailDesigner.write_email_plaintext(send_context)
+
+        try:
+            params: dict = {
+                "from": f"{ns.smtp_from_name} <{ns.smtp_username}>",
+                "to": [send_context.to_email],
+                "subject": send_context.subject_line,
+                "html": html_body,
+                "text": plain_body,
+                "headers": {
+                    "Message-ID": make_msgid(),
+                    "Date": formatdate(localtime=True),
+                },
+            }
+            resend.Emails.send(resend.Emails.SendParams(params))
+        except Exception:
+            raise ResendEmailDeliveryError
+
+    @staticmethod
+    def _smtp_send(send_context: SendContext) -> None:
         """
         Synchronous internal implementation for sending email.
         """

@@ -10,6 +10,7 @@ from src.notification.designer import EmailDesigner
 from src.notification.schemas import SendContext, SendResponse, TemplateFormat
 from src.notification.service import EmailService
 
+
 router = APIRouter(
     prefix="/notification",
     tags=["notification"],
@@ -29,7 +30,7 @@ router = APIRouter(
     },
 )
 async def send_notify_email(
-    valid_user: Annotated[User, Depends(require_role("merchant", "admin"))],
+    _valid_user: Annotated[User, Depends(require_role("merchant", "admin"))],
     send_context: SendContext,
 ):
     return await EmailService.send_email(send_context)

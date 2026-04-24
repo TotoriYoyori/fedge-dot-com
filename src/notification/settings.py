@@ -10,6 +10,8 @@ class NotificationSettings(DomainSettings):
     SMTP_PASSWORD: str
     SMTP_FROM_NAME: str
 
+    RESEND_API_KEY: str
+
     SANDBOX_SMTP_HOST: str | None = None
     SANDBOX_SMTP_PORT: int | None = None
     SANDBOX_SMTP_USERNAME: str | None = None

@@ -584,6 +584,7 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "pyjwt" },
     { name = "python-multipart" },
+    { name = "resend" },
     { name = "sqlalchemy" },
     { name = "uvicorn" },
 ]
@@ -619,6 +620,7 @@ requires-dist = [
     { name = "pydantic-settings", specifier = "==2.13.1" },
     { name = "pyjwt", specifier = "==2.12.1" },
     { name = "python-multipart", specifier = "==0.0.24" },
+    { name = "resend", specifier = ">=2.29.0" },
     { name = "sqlalchemy", specifier = "==2.0.48" },
     { name = "uvicorn", specifier = "==0.42.0" },
 ]
@@ -1716,6 +1718,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/42/f2/05f29bc3913aea15eb670be136045bf5c5bbf4b99ecb839da9b422bb2c85/requests-oauthlib-2.0.0.tar.gz", hash = "sha256:b3dffaebd884d8cd778494369603a9e7b58d29111bf6b41bdc2dcd87203af4e9", size = 55650, upload-time = "2024-03-22T20:32:29.939Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3b/5d/63d4ae3b9daea098d5d6f5da83984853c1bbacd5dc826764b249fe119d24/requests_oauthlib-2.0.0-py2.py3-none-any.whl", hash = "sha256:7dd8a5c40426b779b0868c404bdef9768deccf22749cde15852df527e6269b36", size = 24179, upload-time = "2024-03-22T20:32:28.055Z" },
+]
+
+[[package]]
+name = "resend"
+version = "2.29.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b0/e7/ebb504fee5dac9710192ca04550e8c8250bb2a7612a2397829e3934eb157/resend-2.29.0.tar.gz", hash = "sha256:cd905809a64128b29d5beda1d4a5bda8d60d438a66942ed736ca40238e9d2331", size = 43125, upload-time = "2026-04-16T13:14:56.183Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b0/91/9299b0eac66a33d48dea8c825063077f28d188d89b2d3178c3837c40b3df/resend-2.29.0-py2.py3-none-any.whl", hash = "sha256:aad7c6097c26cf2dbe46534a1fc8d92637fbdea28243b00a3363c8d3136331de", size = 68320, upload-time = "2026-04-16T13:14:54.928Z" },
 ]
 
 [[package]]
