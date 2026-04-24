@@ -27,7 +27,6 @@ class AuthRedirect:
 
     LOGIN_PAGE = "login.html"
     REGISTER_PAGE = "register.html"
-    DASHBOARD_PAGE = "dashboard.html"
 
     @staticmethod
     def to_home() -> RedirectResponse:
@@ -41,19 +40,20 @@ class AuthRedirect:
         return response
 
     @staticmethod
-    def create_cookie(user: User) -> RedirectResponse:
+    def create_cookie(user: User, redirect_url: str = "/") -> RedirectResponse:
         """
-        Create and store a JWT access token in an HTTP-only cookie AND redirect the user to home.
+        Create and store a JWT access token in an HTTP-only cookie AND redirect the user.
 
         Args:
             user (User): A User object.
+            redirect_url (str): The URL to redirect to after setting the cookie. Defaults to "/".
 
         Returns:
-            RedirectResponse: A redirect response to "/" with an authentication cookie set.
+            RedirectResponse: A redirect response to the specified URL with an authentication cookie set.
 
         Example:
             >>> user = User(id=1, role="user")
-            >>> response = AuthRedirect.create_cookie(user)
+            >>> response = AuthRedirect.create_cookie(user, "/dashboard")
             >>> response.status_code
             303
             >>> "access_token" in response.headers.get("set-cookie", "")
@@ -63,7 +63,7 @@ class AuthRedirect:
             data={"sub": str(user.id), "role": str(user.role)},
         )
 
-        response = AuthRedirect.to_home()
+        response = RedirectResponse(url=redirect_url, status_code=status.HTTP_303_SEE_OTHER)
         response.set_cookie(
             key="access_token",
             value=token.access_token,

@@ -9,7 +9,7 @@ import resend
 
 from src.notification.exceptions import ResendEmailDeliveryError
 from src.notification.designer import EmailDesigner
-from src.notification.schemas import SendContext, SendResponse
+from src.notification.schemas import SendContext, EmailSendResponse
 from src.notification.settings import notification_settings as ns
 
 
@@ -22,25 +22,25 @@ class EmailService:
     @staticmethod
     async def send_email(
         send_context: SendContext,
-    ) -> SendResponse:
+    ):
         """
         Send a single HTML email using smtplib.
 
         :param send_context: Delivery metadata and template context for the email.
         """
-        await asyncer.asyncify(EmailService._resend_send)(send_context)
-        return SendResponse()
+        resend_response = await asyncer.asyncify(EmailService._resend_send)(send_context)
+        return EmailSendResponse(**resend_response)
 
     @staticmethod
-    def _resend_send(send_context: SendContext) -> None:
+    def _resend_send(send_context: SendContext) -> resend.Emails.SendResponse:
         """Send an email using the Resend API."""
         resend.api_key = ns.RESEND_API_KEY
 
-        html_body = EmailDesigner.write_email_html(send_context)
-        plain_body = EmailDesigner.write_email_plaintext(send_context)
+        html_body: str = EmailDesigner.write_email_html(send_context)
+        plain_body: str = EmailDesigner.write_email_plaintext(send_context)
 
         try:
-            params: dict = {
+            params = {
                 "from": f"{ns.smtp_from_name} <{ns.smtp_username}>",
                 "to": [send_context.to_email],
                 "subject": send_context.subject_line,
@@ -51,9 +51,11 @@ class EmailService:
                     "Date": formatdate(localtime=True),
                 },
             }
-            resend.Emails.send(resend.Emails.SendParams(params))
+            response = resend.Emails.send(resend.Emails.SendParams(params))
         except Exception:
             raise ResendEmailDeliveryError
+
+        return response
 
     @staticmethod
     def _smtp_send(send_context: SendContext) -> None:

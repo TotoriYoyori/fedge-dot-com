@@ -1,0 +1,470 @@
+{% extends "auth_base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block auth_styles %}
+<style>
+    .dashboard-container {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+    .profile-section {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 2rem;
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .profile-sidebar {
+        text-align: center;
+        border-right: 1px solid #eee;
+        padding-right: 2rem;
+    }
+    .profile-info {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .section-title {
+        font-family: var(--font-heading);
+        font-size: 2rem;
+        margin-bottom: 1.5rem;
+        color: var(--text-color);
+    }
+    .user-display-name {
+        font-family: var(--font-heading);
+        font-size: 2.5rem;
+        margin: 0;
+        color: var(--primary-color);
+    }
+    .profile-pic {
+        width: 120px;
+        height: 120px;
+        background: #f0f0f0;
+        border-radius: 50%;
+        margin: 0 auto 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: #ccc;
+        border: 2px solid #eee;
+    }
+    .btn-action {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+        text-align: center;
+        background: var(--primary-color, #4a90e2);
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+    .btn-action:hover {
+        opacity: 0.9;
+    }
+    .btn-secondary {
+        background: #6c757d;
+    }
+    .btn-google {
+        background: #4285F4;
+    }
+    .orders-section {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .orders-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+    }
+    .order-card {
+        border: 1px solid #eee;
+        border-radius: 8px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.2s, box-shadow 0.2s;
+        position: relative;
+    }
+    .order-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .order-banner {
+        height: 140px;
+        background-color: #e9ecef;
+        background-size: cover;
+        background-position: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: #adb5bd;
+    }
+    .order-content {
+        padding: 1rem;
+        flex-grow: 1;
+        padding-top: 1.5rem;
+    }
+    .order-content h4 {
+        margin: 0 0 0.5rem 0;
+        font-family: var(--font-heading);
+        font-size: 1.25rem;
+    }
+    .order-content p {
+        margin: 0.25rem 0;
+        font-size: 0.85rem;
+        color: #666;
+    }
+    .order-footer {
+        padding: 0.75rem 1rem;
+        border-top: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: relative;
+    }
+    .remind-btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.75rem;
+        margin: 0;
+    }
+    .status-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        color: #666;
+        cursor: help;
+    }
+    .status-circle {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    .status-empty { border: 1px solid #ccc; background: transparent; }
+    .status-red { background: #ff4d4d; }
+    .status-green { background: #2ecc71; }
+
+    .booking-info {
+        display: none;
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        right: 0;
+        background: #f8f9fa;
+        padding: 0.75rem;
+        border-top: 1px solid #eee;
+        border-bottom: 1px solid #eee;
+        font-size: 0.8rem;
+        color: #555;
+        z-index: 10;
+        box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
+    }
+    .booking-info p {
+        margin: 0.2rem 0 !important;
+    }
+    
+    .status-row:hover + .booking-info,
+    .booking-info:hover {
+        display: block;
+    }
+    
+    @media (max-width: 900px) {
+        .orders-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .profile-section {
+            grid-template-columns: 1fr;
+        }
+        .profile-sidebar {
+            border-right: none;
+            border-bottom: 1px solid #eee;
+            padding-right: 0;
+            padding-bottom: 2rem;
+        }
+    }
+    @media (max-width: 600px) {
+        .orders-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block auth_content %}
+<div class="auth-container" style="max-width: 1100px;">
+    <div class="dashboard-header" style="margin-bottom: 2rem;">
+        <h2 class="section-title">User Dashboard</h2>
+    </div>
+
+    <div class="dashboard-container">
+        <!-- Profile Section -->
+        <div class="profile-section">
+            <div class="profile-sidebar">
+                <div class="profile-pic">
+                    <span>👤</span>
+                </div>
+                <h3 class="user-display-name">{{ user.username }}</h3>
+                <p style="color: #666; margin-bottom: 1rem;">{{ user.email }}</p>
+                <p style="font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 1px;">{{ user.role }}</p>
+            </div>
+            
+            <div class="profile-info">
+                <div style="margin-bottom: 1.5rem;">
+                    <button class="btn-action btn-secondary">Edit Profile</button>
+                    <button class="btn-action btn-secondary">Change Password</button>
+                    <button class="btn-action btn-google">Authenticate with Google</button>
+                </div>
+                
+                {% if user.role in ['merchant', 'admin'] %}
+                <div style="padding-top: 1.5rem; border-top: 1px solid #eee;">
+                    <p style="font-size: 0.9rem; font-weight: bold; margin-bottom: 0.75rem;">Merchant Tools</p>
+                    <a href="{{ url_for('send_notification_page') }}" class="btn-action">Send Notification Email</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Orders Section -->
+        {% if user.role in ["merchant", "admin"] %}
+        <div class="orders-section">
+            <h2 class="section-title">Merchant Actions</h2>
+            <div class="actions-grid">
+                <a href="{{ url_for('send_notification_page') }}" class="btn-action">Send Promotional Email</a>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="orders-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 class="section-title" style="margin: 0;">Customer Orders</h3>
+                <a href="{{ url_for('send_notification_page') }}" class="btn-action remind-btn" style="width: auto; text-decoration: none;">Remind All Customers</a>
+            </div>
+
+            <div class="orders-grid">
+                <!-- Filler Order 1 -->
+                <div class="order-card">
+                    <div class="order-banner" style="background-image: url('/static/users/img/spa_1.jpg');"></div>
+                    <div class="order-content">
+                        <h4>Jane Doe</h4>
+                        <p><strong>Treatment:</strong> Hot Rock Massage (60 mins)</p>
+                        <p><strong>Price:</strong> 850 SEK</p>
+                        <p><strong>Location:</strong> Stockholm City</p>
+                        <p><strong>Email:</strong> jane.doe@example.com</p>
+                        <p><strong>Order #:</strong> ORD-2024-001</p>
+                        <p><strong>Date:</strong> 2024-03-15</p>
+                    </div>
+                    <div class="order-footer">
+                        <div class="status-row">
+                            STATUS <span class="status-circle status-empty"></span> <small>Not Booked</small>
+                        </div>
+                        <a href="{{ url_for('send_notification_page') }}" class="btn-action btn-secondary remind-btn" style="text-decoration: none;">Remind</a>
+                    </div>
+                </div>
+
+                <!-- Filler Order 2 -->
+                <div class="order-card">
+                    <div class="order-banner" style="background-image: url('/static/users/img/spa_2.jpg');"></div>
+                    <div class="order-content">
+                        <h4>John Smith</h4>
+                        <p><strong>Treatment:</strong> Facial Care (45 mins)</p>
+                        <p><strong>Price:</strong> 950 SEK</p>
+                        <p><strong>Location:</strong> Gothenburg East</p>
+                        <p><strong>Email:</strong> j.smith@provider.se</p>
+                        <p><strong>Order #:</strong> ORD-2024-002</p>
+                        <p><strong>Date:</strong> 2024-03-16</p>
+                    </div>
+                    <div class="order-footer">
+                        <div class="status-row">
+                            STATUS <span class="status-circle status-green"></span> <small>Booked</small>
+                        </div>
+                        <div class="booking-info">
+                            <p><strong>Service:</strong> Bokadirekt Integration</p>
+                            <p><strong>Booking ID:</strong> BD-88291</p>
+                            <p><strong>Date:</strong> 2024-04-10 14:00</p>
+                        </div>
+                        <a href="{{ url_for('send_notification_page') }}" class="btn-action btn-secondary remind-btn" style="text-decoration: none;">Remind</a>
+                    </div>
+                </div>
+
+                <!-- Filler Order 3 -->
+                <div class="order-card">
+                    <div class="order-banner" style="background-image: url('/static/users/img/spa_3.jpg');"></div>
+                    <div class="order-content">
+                        <h4>Alice Johnson</h4>
+                        <p><strong>Treatment:</strong> Body Massage (50 mins)</p>
+                        <p><strong>Price:</strong> 750 SEK</p>
+                        <p><strong>Location:</strong> Malmö Central</p>
+                        <p><strong>Email:</strong> alice.j@gmail.com</p>
+                        <p><strong>Order #:</strong> ORD-2024-003</p>
+                        <p><strong>Date:</strong> 2024-03-18</p>
+                    </div>
+                    <div class="order-footer">
+                        <div class="status-row">
+                            STATUS <span class="status-circle status-red"></span> <small>Cancelled</small>
+                        </div>
+                        <a href="{{ url_for('send_notification_page') }}" class="btn-action btn-secondary remind-btn" style="text-decoration: none;">Remind</a>
+                    </div>
+                </div>
+
+                <!-- Filler Order 4 -->
+                <div class="order-card">
+                    <div class="order-banner" style="background-image: url('/static/users/img/spa_4.jpg');"></div>
+                    <div class="order-content">
+                        <h4>Robert Brown</h4>
+                        <p><strong>Treatment:</strong> Couple Massage (90 mins)</p>
+                        <p><strong>Price:</strong> 1800 SEK</p>
+                        <p><strong>Location:</strong> Uppsala North</p>
+                        <p><strong>Email:</strong> rb@outlook.com</p>
+                        <p><strong>Order #:</strong> ORD-2024-004</p>
+                        <p><strong>Date:</strong> 2024-03-20</p>
+                    </div>
+                    <div class="order-footer">
+                        <div class="status-row">
+                            STATUS <span class="status-circle status-empty"></span> <small>Not Booked</small>
+                        </div>
+                        <a href="{{ url_for('send_notification_page') }}" class="btn-action btn-secondary remind-btn" style="text-decoration: none;">Remind</a>
+                    </div>
+                </div>
+
+                <!-- Filler Order 5 -->
+                <div class="order-card">
+                    <div class="order-banner" style="background-image: url('/static/users/img/spa_5.jpg');"></div>
+                    <div class="order-content">
+                        <h4>Emily Davis</h4>
+                        <p><strong>Treatment:</strong> Foot Massage (45 mins)</p>
+                        <p><strong>Price:</strong> 550 SEK</p>
+                        <p><strong>Location:</strong> Visby Harbor</p>
+                        <p><strong>Email:</strong> emily.d@visby.se</p>
+                        <p><strong>Order #:</strong> ORD-2024-005</p>
+                        <p><strong>Date:</strong> 2024-03-22</p>
+                    </div>
+                    <div class="order-footer">
+                        <div class="status-row">
+                            STATUS <span class="status-circle status-green"></span> <small>Booked</small>
+                        </div>
+                        <div class="booking-info">
+                            <p><strong>Service:</strong> Bokadirekt Integration</p>
+                            <p><strong>Booking ID:</strong> BD-99102</p>
+                            <p><strong>Date:</strong> 2024-05-01 10:30</p>
+                        </div>
+                        <a href="{{ url_for('send_notification_page') }}" class="btn-action btn-secondary remind-btn" style="text-decoration: none;">Remind</a>
+                    </div>
+                </div>
+
+                <!-- Filler Order 6 -->
+                <div class="order-card">
+                    <div class="order-banner" style="background-image: url('/static/users/img/spa_1.jpg');"></div>
+                    <div class="order-content">
+                        <h4>Michael Wilson</h4>
+                        <p><strong>Treatment:</strong> Hot Rock Massage (60 mins)</p>
+                        <p><strong>Price:</strong> 850 SEK</p>
+                        <p><strong>Location:</strong> Lund Central</p>
+                        <p><strong>Email:</strong> mw@university.se</p>
+                        <p><strong>Order #:</strong> ORD-2024-006</p>
+                        <p><strong>Date:</strong> 2024-03-25</p>
+                    </div>
+                    <div class="order-footer">
+                        <div class="status-row">
+                            STATUS <span class="status-circle status-red"></span> <small>Cancelled</small>
+                        </div>
+                        <a href="{{ url_for('send_notification_page') }}" class="btn-action btn-secondary remind-btn" style="text-decoration: none;">Remind</a>
+                    </div>
+                </div>
+
+                <!-- Filler Order 7 -->
+                <div class="order-card">
+                    <div class="order-banner" style="background-image: url('/static/users/img/spa_2.jpg');"></div>
+                    <div class="order-content">
+                        <h4>Sarah Miller</h4>
+                        <p><strong>Treatment:</strong> Facial Care (45 mins)</p>
+                        <p><strong>Price:</strong> 950 SEK</p>
+                        <p><strong>Location:</strong> Örebro City</p>
+                        <p><strong>Email:</strong> sarah.m@web.de</p>
+                        <p><strong>Order #:</strong> ORD-2024-007</p>
+                        <p><strong>Date:</strong> 2024-03-27</p>
+                    </div>
+                    <div class="order-footer">
+                        <div class="status-row">
+                            STATUS <span class="status-circle status-empty"></span> <small>Not Booked</small>
+                        </div>
+                        <a href="{{ url_for('send_notification_page') }}" class="btn-action btn-secondary remind-btn" style="text-decoration: none;">Remind</a>
+                    </div>
+                </div>
+
+                <!-- Filler Order 8 -->
+                <div class="order-card">
+                    <div class="order-banner" style="background-image: url('/static/users/img/spa_3.jpg');"></div>
+                    <div class="order-content">
+                        <h4>David Taylor</h4>
+                        <p><strong>Treatment:</strong> Body Massage (50 mins)</p>
+                        <p><strong>Price:</strong> 750 SEK</p>
+                        <p><strong>Location:</strong> Linköping South</p>
+                        <p><strong>Email:</strong> david.t@sports.se</p>
+                        <p><strong>Order #:</strong> ORD-2024-008</p>
+                        <p><strong>Date:</strong> 2024-03-28</p>
+                    </div>
+                    <div class="order-footer">
+                        <div class="status-row">
+                            STATUS <span class="status-circle status-green"></span> <small>Booked</small>
+                        </div>
+                        <div class="booking-info">
+                            <p><strong>Service:</strong> Bokadirekt Integration</p>
+                            <p><strong>Booking ID:</strong> BD-10293</p>
+                            <p><strong>Date:</strong> 2024-04-15 09:00</p>
+                        </div>
+                        <a href="{{ url_for('send_notification_page') }}" class="btn-action btn-secondary remind-btn" style="text-decoration: none;">Remind</a>
+                    </div>
+                </div>
+
+                <!-- Filler Order 9 -->
+                <div class="order-card">
+                    <div class="order-banner" style="background-image: url('/static/users/img/spa_5.jpg');"></div>
+                    <div class="order-content">
+                        <h4>Anna Larsson</h4>
+                        <p><strong>Treatment:</strong> Foot Massage (45 mins)</p>
+                        <p><strong>Price:</strong> 550 SEK</p>
+                        <p><strong>Location:</strong> Stockholm Östermalm</p>
+                        <p><strong>Email:</strong> anna.l@spa.se</p>
+                        <p><strong>Order #:</strong> ORD-2024-009</p>
+                        <p><strong>Date:</strong> 2024-03-30</p>
+                    </div>
+                    <div class="order-footer">
+                        <div class="status-row">
+                            STATUS <span class="status-circle status-empty"></span> <small>Not Booked</small>
+                        </div>
+                        <a href="{{ url_for('send_notification_page') }}" class="btn-action btn-secondary remind-btn" style="text-decoration: none;">Remind</a>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 2rem; padding: 1.5rem; background: #f9f9f9; border-radius: 4px; text-align: center;">
+                <p style="color: #888; margin: 0;">End of order list. New orders will appear at the top.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="auth-footer" style="margin-top: 2rem; display: flex; justify-content: space-between; align-items: center;">
+        <a href="{{ request.url_for('home_page') }}" class="btn btn-login">Back to Home</a>
+        <form action="{{ request.url_for('logout_page') }}" method="post">
+            <button type="submit" class="btn btn-logout">Logout</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

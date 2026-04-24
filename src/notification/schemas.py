@@ -1,5 +1,5 @@
 import datetime as dt
-from typing import Optional
+from typing import Dict, Optional
 
 from pydantic import EmailStr, Field
 
@@ -25,8 +25,6 @@ class SendContext(TemplateFormat):
     to_email: EmailStr
 
 
-class SendResponse(CustomBaseModel):
-    sent_time: str = Field(
-        default_factory=lambda: dt.datetime.now().strftime("%Y-%m-%d %H-%M-%S"),
-    )
-    message: str = "Email successfully sent!"
+class EmailSendResponse(CustomBaseModel):
+    id: str
+    http_headers: Optional[Dict[str, str]] = None

@@ -7,19 +7,19 @@ from src.auth.dependencies import require_role
 from src.auth.models import User
 from src.notification.dependencies import craft_template_format
 from src.notification.designer import EmailDesigner
-from src.notification.schemas import SendContext, SendResponse, TemplateFormat
+from src.notification.schemas import SendContext, EmailSendResponse, TemplateFormat
 from src.notification.service import EmailService
 
 
 router = APIRouter(
-    prefix="/notification",
-    tags=["notification"],
+    prefix="/api/notification",
+    tags=["api-notification"],
 )
 
 
 @router.post(
     "/",
-    response_model=SendResponse,
+    response_model=EmailSendResponse,
     status_code=status.HTTP_200_OK,
     summary="Send a notification email",
     responses={

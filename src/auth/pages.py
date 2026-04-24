@@ -68,7 +68,7 @@ async def register_submit(
 
     created_user = await AuthService.create(auth_create, db)
 
-    return AuthRedirect.create_cookie(created_user)
+    return AuthRedirect.create_cookie(created_user, redirect_url=f"/users/{created_user.id}/dashboard")
 
 
 @page.get(
@@ -105,27 +105,7 @@ async def login_submit(
     if current_user:
         return AuthRedirect.to_home()
 
-    return AuthRedirect.create_cookie(valid_user)
-
-
-@page.get(
-    "/dashboard",
-    name="dashboard_page",
-    summary="Renders the dashboard page for the authenticated user",
-    **RouteDecoratorPreset.html_get(),
-)
-async def dashboard(
-    request: Request,
-    current_user: Annotated[Optional[User], Depends(valid_cookie_token)],
-):
-    if not current_user:
-        return AuthRedirect.to_home()
-
-    return templates.TemplateResponse(
-        request=request,
-        name=AuthRedirect.DASHBOARD_PAGE,
-        context={"user": current_user},
-    )
+    return AuthRedirect.create_cookie(valid_user, redirect_url=f"/users/{valid_user.id}/dashboard")
 
 
 @page.post(

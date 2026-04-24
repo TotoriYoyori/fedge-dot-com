@@ -13,6 +13,8 @@ from src.auth.router import router as auth_router
 from src.config import settings
 from src.database import Base, engine
 from src.landing.pages import page as landing_page
+from src.users.pages import page as users_page
+from src.notification.pages import page as notification_page
 from src.notification.router import router as notification_router
 
 
@@ -64,11 +66,18 @@ app.mount(
     StaticFiles(directory=BASE_DIR / "auth" / "static"),
     name="auth-static",
 )
+app.mount(
+    "/static/users",
+    StaticFiles(directory=BASE_DIR / "users" / "static"),
+    name="users-static",
+)
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 
 # --------------- API ROUTE REGISTRATION
 app.include_router(landing_page)
 app.include_router(auth_page)
+app.include_router(users_page)
+app.include_router(notification_page)
 
 app.include_router(auth_router)
 app.include_router(notification_router)

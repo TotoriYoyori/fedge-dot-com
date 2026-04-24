@@ -16,7 +16,7 @@
                     <span class="user-label">{{ current_user.role|title }}</span>
                     <span class="user-name">{{ current_user.username }}</span>
                 </div>
-                <a href="{{ request.url_for('dashboard_page') }}" class="btn btn-register">Dashboard</a>
+                <a href="{{ request.url_for('dashboard_page', user_id=current_user.id) }}" class="btn btn-register">Dashboard</a>
             </div>
         {% else %}
             <nav class="auth-buttons">
@@ -31,7 +31,7 @@
         <p>Experience your emails in a beautifully designed, focused environment. Inspired by tranquility, built for productivity.</p>
         <div class="hero-cta">
             {% if current_user %}
-                <a href="{{ request.url_for('dashboard_page') }}" class="btn btn-register">Visit Dashboard</a>
+                <a href="{{ request.url_for('dashboard_page', user_id=current_user.id) }}" class="btn btn-register">Visit Dashboard</a>
             {% else %}
                 <a href="{{ request.url_for('register_page') }}" class="btn btn-register">Get Started</a>
             {% endif %}
