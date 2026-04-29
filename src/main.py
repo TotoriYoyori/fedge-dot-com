@@ -9,6 +9,7 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from src.config import settings
 from src.database import Base, engine
 from src.auth.exceptions import AuthExceptionHandler
+from src.google.exceptions import GoogleExceptionHandler
 from src.notification.exceptions import NotificationExceptionHandler
 
 from src.auth.pages import page as auth_page
@@ -43,6 +44,7 @@ app = FastAPI(
 
 # --------------- DOMAIN ERROR HANDLERS
 AuthExceptionHandler(app)
+GoogleExceptionHandler(app)
 NotificationExceptionHandler(app)
 
 

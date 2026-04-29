@@ -5,32 +5,33 @@ from googleapiclient.discovery import build
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.auth.models import User
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from src.google.models import GoogleOAuthCredential, GoogleOAuthState
-from src.google.schemas import GoogleOAuth2StateResponse
+from src.google.schemas import GoogleOAuth2FlowContext, GoogleOAuth2RedirectResponse
 
 
 class GoogleOAuthService:
     @staticmethod
     async def create_state(
         db: AsyncSession,
-        state: str,
-        app_user_id: str,
-        auth_url: str,
-        code_verifier: str | None = None,
-    ) -> GoogleOAuth2StateResponse:
+        valid_user: User,
+        flow_context: GoogleOAuth2FlowContext,
+    ) -> GoogleOAuth2RedirectResponse:
         oauth_state = GoogleOAuthState(
-            state=state,
-            app_user_id=app_user_id,
-            code_verifier=code_verifier,
+            state=flow_context.state,
+            app_user_id=str(valid_user.id),
+            code_verifier=flow_context.code_verifier,
             created_time=datetime.now(timezone.utc),
         )
         db.add(oauth_state)
+
         await db.commit()
         await db.refresh(oauth_state)
-        return GoogleOAuth2StateResponse(
-            auth_url=auth_url,
+
+        return GoogleOAuth2RedirectResponse(
+            auth_url=flow_context.auth_url,
             message="You are being redirected to Google for authorization.",
         )
 
@@ -45,6 +46,7 @@ class GoogleOAuthService:
 
         await db.delete(oauth_state)
         await db.commit()
+
         return oauth_state
 
     @staticmethod
