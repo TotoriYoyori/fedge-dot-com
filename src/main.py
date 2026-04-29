@@ -6,15 +6,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
-from src.auth.exceptions import AuthExceptionHandler
-from src.notification.exceptions import NotificationExceptionHandler
-from src.auth.pages import page as auth_page
-from src.auth.router import router as auth_router
 from src.config import settings
 from src.database import Base, engine
+from src.auth.exceptions import AuthExceptionHandler
+from src.notification.exceptions import NotificationExceptionHandler
+
+from src.auth.pages import page as auth_page
 from src.landing.pages import page as landing_page
-from src.users.pages import page as users_page
 from src.notification.pages import page as notification_page
+from src.users.pages import page as users_page
+
+from src.auth.router import router as auth_router
+from src.google.router import router as google_router
 from src.notification.router import router as notification_router
 
 
@@ -81,3 +84,4 @@ app.include_router(notification_page)
 
 app.include_router(auth_router)
 app.include_router(notification_router)
+app.include_router(google_router)

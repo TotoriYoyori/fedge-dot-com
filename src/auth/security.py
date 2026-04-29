@@ -11,7 +11,7 @@ from src.auth.settings import auth_settings
 # --------------- SECURITY PRIMITIVES
 password_hash = PasswordHash.recommended()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 
 # --------------- JWT AND CRYPTOGRAPHY SERVICES

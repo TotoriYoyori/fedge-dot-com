@@ -12,7 +12,7 @@ from src.notification.service import EmailService
 
 
 router = APIRouter(
-    prefix="/api/notification",
+    prefix="/api/v1/notification",
     tags=["api-notification"],
 )
 

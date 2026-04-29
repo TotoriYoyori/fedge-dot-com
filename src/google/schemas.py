@@ -5,6 +5,11 @@ from pydantic import BaseModel, ConfigDict, Field
 from src.schemas import CustomBaseModel
 
 
+class GoogleOAuth2StateResponse(CustomBaseModel):
+    auth_url: str
+    message: str
+
+
 class GoogleCredentialResponse(CustomBaseModel):
     app_user_id: str
     email_address: str | None = None

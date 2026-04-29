@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from src.google.models import GoogleOAuthCredential, GoogleOAuthState
+from src.google.schemas import GoogleOAuth2StateResponse
 
 
 class GoogleOAuthService:
@@ -16,8 +17,9 @@ class GoogleOAuthService:
         db: AsyncSession,
         state: str,
         app_user_id: str,
+        auth_url: str,
         code_verifier: str | None = None,
-    ) -> GoogleOAuthState:
+    ) -> GoogleOAuth2StateResponse:
         oauth_state = GoogleOAuthState(
             state=state,
             app_user_id=app_user_id,
@@ -27,7 +29,10 @@ class GoogleOAuthService:
         db.add(oauth_state)
         await db.commit()
         await db.refresh(oauth_state)
-        return oauth_state
+        return GoogleOAuth2StateResponse(
+            auth_url=auth_url,
+            message="You are being redirected to Google for authorization.",
+        )
 
     @staticmethod
     async def consume_state(db: AsyncSession, state: str) -> GoogleOAuthState | None:

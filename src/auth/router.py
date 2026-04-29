@@ -16,7 +16,7 @@ from src.auth.service import AuthService
 from src.database import get_db
 
 # --------------- API AUTHENTICATION ROUTER
-router = APIRouter(prefix="/auth", tags=["api-auth"])
+router = APIRouter(prefix="/api/v1/auth", tags=["api-auth"])
 
 
 @router.post(

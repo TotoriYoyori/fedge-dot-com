@@ -1,10 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import RedirectResponse
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.auth.dependencies import require_role
+from src.auth.models import User
 from src.database import get_db
 from src.google.auth import fetch_credentials_from_code, get_google_flow
-from src.google.schemas import GoogleCredentialResponse, GoogleInboxResponse
+from src.google.dependencies import GoogleOAuth2FlowContext, generate_google_oauth2_flow
+from src.google.schemas import (
+    GoogleCredentialResponse,
+    GoogleInboxResponse,
+    GoogleOAuth2StateResponse,
+)
 from src.google.service import (
     GoogleOAuthService,
     create_gmail_service,
@@ -12,29 +20,41 @@ from src.google.service import (
     refresh_credential_if_needed,
 )
 
-router = APIRouter(prefix="/google", tags=["google"])
+# --------------- API GOOGLE OAUTH ROUTER
+router = APIRouter(prefix="/api/v1/google", tags=["api-google"])
 
 
-@router.get("/login")
-async def login(
-    app_user_id: str = Query(
-        ..., min_length=1, description="Your app's user identifier"
+@router.get(
+    "/oauth2",
+    summary="Create Google OAuth2 authorization state",
+    description=(
+        "Creates a temporary OAuth2 state record for the authenticated user and "
+        "returns the Google authorization URL the client should use to redirect "
+        "the user."
     ),
+    response_model=GoogleOAuth2StateResponse,
+    status_code=status.HTTP_200_OK,
+    responses={
+        200: {
+            "model": GoogleOAuth2StateResponse,
+            "description": "Successfully created OAuth2 authorization state",
+        },
+        401: {"description": "Unauthorized access"},
+        403: {"description": "Insufficient permissions"},
+    },
+)
+async def oauth2(
+    valid_user: Annotated[User, Depends(require_role("merchant", "admin"))],
+    flow_context: Annotated[GoogleOAuth2FlowContext, Depends(generate_google_oauth2_flow)],
     db: AsyncSession = Depends(get_db),
 ):
-    flow = get_google_flow()
-    auth_url, state = flow.authorization_url(
-        access_type="offline",
-        include_granted_scopes="true",
-        prompt="consent",
-    )
-    await GoogleOAuthService.create_state(
+    return await GoogleOAuthService.create_state(
         db,
-        state=state,
-        app_user_id=app_user_id,
-        code_verifier=flow.code_verifier,
+        state=flow_context.state,
+        app_user_id=str(valid_user.id),
+        auth_url=flow_context.auth_url,
+        code_verifier=flow_context.code_verifier,
     )
-    return RedirectResponse(auth_url)
 
 
 @router.get("/callback")
@@ -75,8 +95,8 @@ async def callback(
     }
 
 
-@router.get("/credential", response_model=GoogleCredentialResponse)
-async def get_credential(
+@router.get("/me", response_model=GoogleCredentialResponse)
+async def me(
     app_user_id: str = Query(..., min_length=1),
     db: AsyncSession = Depends(get_db),
 ):
