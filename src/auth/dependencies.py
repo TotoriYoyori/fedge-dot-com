@@ -27,7 +27,7 @@ async def _verify_token(access_token: str, db: AsyncSession) -> User:
     Raises:
         UnauthenticatedUser: If the token is missing.
         MalformedToken: If the token is invalid or malformed.
-        UserNotFound: If no user matches the token payload.
+        UserNotFound: If no user matches the token existing_record.
     """
     if not access_token:
         raise UnauthenticatedUser
@@ -85,7 +85,7 @@ async def valid_access_token(
     Raises:
         UnauthenticatedUser: If the token is missing.
         MalformedToken: If the token is invalid or malformed.
-        UserNotFound: If no user matches the token payload.
+        UserNotFound: If no user matches the token existing_record.
 
     Example:
         >>> async def me(authorized_user: Annotated[User, Depends(valid_access_token)]):
@@ -176,7 +176,7 @@ async def username_already_exists(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> bool:
     """
-    Check if a username already exists during registration by checking JSON payload's username entry.
+    Check if a username already exists during registration by checking JSON existing_record's username entry.
     Use as dependency injection only.
 
     Raises:

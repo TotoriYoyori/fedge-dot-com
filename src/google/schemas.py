@@ -10,10 +10,6 @@ class GoogleOAuth2RedirectResponse(CustomBaseModel):
     message: str
 
 
-class GoogleOAuth2NextSteps(CustomBaseModel):
-    inbox: str
-
-
 class DebugCredentialResponse(CustomBaseModel):
     app_user_id: str
     token: str | None = None
@@ -21,14 +17,15 @@ class DebugCredentialResponse(CustomBaseModel):
     token_uri: str | None = None
     client_id: str | None = None
     client_secret: str | None = None
-    scopes: list[str]
+    scopes: str
     expiry: datetime | None = None
 
 
 class GoogleOAuth2CredentialResponse(CustomBaseModel):
     app_user_id: str
-    scopes: list[str]
+    scopes: str
     expiry: datetime | None = None
+    message: str = "Successfully connected to Google using OAuth 2.0!"
 
 
 class GoogleInboxMessage(CustomBaseModel):

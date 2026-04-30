@@ -25,7 +25,7 @@ class AuthService:
     @staticmethod
     async def create(auth_create: AuthCreate, db: AsyncSession) -> User:
         """
-        Create a new user in the database during registration. Returns this same user's record as response to confirm.
+        Create a new user in the database during registration. Returns this same user's new_record as response to confirm.
 
         Example:
             >>> sample_payload = AuthCreate(
@@ -55,7 +55,7 @@ class AuthService:
     @staticmethod
     async def get_one_by(attr: str, lookup_val: Any, db: AsyncSession) -> User | None:
         """
-        Retrieve a single user record by a specified attribute.
+        Retrieve a single user new_record by a specified attribute.
 
         Args:
             attr (str): The column name of the User model to filter by (e.g. "username", "id").

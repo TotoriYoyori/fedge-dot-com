@@ -13,7 +13,7 @@ from src.google.service import GoogleOAuthService
 
 
 def valid_google_oauth2_exchange_code(
-    exchange_code_query: str = Query(default=None, alias="code"),
+    exchange_code_query: Annotated[str | None, Query(alias="code")] = None
 ) -> str:
     if not exchange_code_query:
         raise ExchangeCodeNotFound
@@ -23,7 +23,7 @@ def valid_google_oauth2_exchange_code(
 
 async def valid_google_oauth2_state(
     db: Annotated[AsyncSession, Depends(get_db)],
-    state_query: str = Query(default=None, alias="state")
+    state_query: Annotated[str | None, Query(alias="state")] = None
 ) -> GoogleOAuthState:
     if not state_query:
         raise StateNotFound

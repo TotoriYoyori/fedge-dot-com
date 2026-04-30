@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 from anyio import to_thread
 from google.auth.transport.requests import Request
@@ -9,6 +9,19 @@ from googleapiclient.discovery import build
 from src.google.exceptions import ClientSecretNotFound, FaultyFlow, InvalidPKCE
 from src.google.models import GoogleOAuthCredential, GoogleOAuthState
 from src.google.settings import google_settings
+from src.schemas import CustomBaseModel
+
+
+class GoogleOAuthCredentialRecord(CustomBaseModel):
+    app_user_id: str
+    access_token: str | None = None
+    refresh_token: str | None = None
+    token_uri: str
+    client_id: str | None = None
+    client_secret: str | None = None
+    scopes: str
+    expiry: datetime | None = None
+    email_address: str | None = None
 
 
 class GoogleOAuthSecurity:
@@ -26,11 +39,12 @@ class GoogleOAuthSecurity:
             raise ClientSecretNotFound
 
     @staticmethod
-    def _verify_code_challege(flow: Flow, code_verifier: str) -> Flow:
-        if code_verifier and flow.code_verifier == code_verifier:
-            return flow
+    def _attach_code_verifier(flow: Flow, code_verifier: str | None) -> Flow:
+        if not code_verifier:
+            raise InvalidPKCE
 
-        raise InvalidPKCE
+        flow.code_verifier = code_verifier
+        return flow
 
 
     @staticmethod
@@ -48,8 +62,9 @@ class GoogleOAuthSecurity:
         Example:
             >>> auth_url, state, code_verifier = GoogleOAuthSecurity.init_flow()
         """
+        flow = GoogleOAuthSecurity._generate_base_flow()
+
         try:
-            flow = GoogleOAuthSecurity._generate_base_flow()
             auth_url, state = flow.authorization_url(
                 access_type=google_settings.FLOW_ACCESS_TYPE,
                 include_granted_scopes=google_settings.FLOW_INCLUDE_GRANTED_SCOPES,
@@ -62,12 +77,11 @@ class GoogleOAuthSecurity:
 
     @staticmethod
     async def pkce_flow(exchange_code: str, oauth_state: GoogleOAuthState) -> Credentials:
-        try:
-            flow = GoogleOAuthSecurity._generate_base_flow(state=oauth_state.state)
-        except Exception:
-            raise FaultyFlow
-
-        verified_flow = GoogleOAuthSecurity._verify_code_challege(flow, oauth_state.code_verifier)
+        flow = GoogleOAuthSecurity._generate_base_flow(state=oauth_state.state)
+        verified_flow = GoogleOAuthSecurity._attach_code_verifier(
+            flow,
+            oauth_state.code_verifier,
+        )
 
         try:
             verified_flow.fetch_token(code=exchange_code)
@@ -77,11 +91,12 @@ class GoogleOAuthSecurity:
         return verified_flow.credentials
 
     @staticmethod
-    async def build_app_credential_records(credentials: Credentials, app_user_id: str) -> GoogleOAuthCredential:
-        google_email = await GoogleOAuthSecurity.get_authorized_email(credentials)
-        now = datetime.now(timezone.utc)
-
-        return GoogleOAuthCredential(
+    def build_app_oauth_credential(
+        credentials: Credentials,
+        app_user_id: str,
+        email_address: str | None = None,
+    ) -> GoogleOAuthCredentialRecord:
+        return GoogleOAuthCredentialRecord(
             app_user_id=app_user_id,
             access_token=credentials.token,
             refresh_token=credentials.refresh_token,
@@ -90,9 +105,7 @@ class GoogleOAuthSecurity:
             client_secret=credentials.client_secret,
             scopes=",".join(credentials.scopes or []),
             expiry=credentials.expiry,
-            email_address=google_email,
-            created_time=now,
-            updated_time=now,
+            email_address=email_address,
         )
 
     @staticmethod

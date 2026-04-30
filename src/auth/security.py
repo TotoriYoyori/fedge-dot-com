@@ -125,13 +125,13 @@ class AuthSecurity:
     @staticmethod
     def verify_access_token(token: str) -> dict | None:
         """
-        Verify a JWT access token and return its decoded payload if valid.
+        Verify a JWT access token and return its decoded existing_record if valid.
 
         Args:
             token (str): The JWT access token to validate.
 
         Returns:
-            dict | None: The decoded token payload if valid, otherwise None.
+            dict | None: The decoded token existing_record if valid, otherwise None.
 
         Example:
             >>> AuthSecurity.verify_access_token("valid.jwt.token")
