@@ -4,7 +4,11 @@ from fastapi.responses import JSONResponse
 from src.exceptions import BaseExceptionHandler
 
 
-class FlowNotFound(Exception):
+class FaultyFlow(Exception):
+    pass
+
+
+class ClientSecretNotFound(Exception):
     pass
 
 
@@ -20,13 +24,31 @@ class StateNotFound(Exception):
     pass
 
 
+class InvalidPKCE(Exception):
+    pass
+
+
 class GoogleExceptionHandler(BaseExceptionHandler):
     def register_exception_handlers(self) -> None:
-        @self.app.exception_handler(FlowNotFound)
-        async def flow_not_found_handler(request: Request, _exc: FlowNotFound):
+        @self.app.exception_handler(ClientSecretNotFound)
+        async def client_secret_not_found_handler(
+            request: Request, _exc: ClientSecretNotFound
+        ):
             return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                content={"detail": "Google OAuth flow could not be created."},
+                content={"detail": "Google OAuth client secret file was not found."},
+            )
+
+        @self.app.exception_handler(FaultyFlow)
+        async def faulty_flow_handler(request: Request, _exc: FaultyFlow):
+            return JSONResponse(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content={
+                    "detail": (
+                        "Google OAuth flow, authorization URL, or state could not "
+                        "be created."
+                    )
+                },
             )
 
         @self.app.exception_handler(MalformedState)
@@ -50,4 +72,11 @@ class GoogleExceptionHandler(BaseExceptionHandler):
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={"detail": "Google OAuth state not found."},
+            )
+
+        @self.app.exception_handler(InvalidPKCE)
+        async def invalid_pkce_handler(request: Request, _exc: InvalidPKCE):
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"detail": "Google OAuth PKCE verifier is invalid."},
             )

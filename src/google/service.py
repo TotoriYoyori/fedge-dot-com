@@ -1,53 +1,143 @@
 from datetime import datetime, timezone
 
-from anyio import to_thread
-from googleapiclient.discovery import build
+from google.oauth2.credentials import Credentials
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.models import User
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
 from src.google.models import GoogleOAuthCredential, GoogleOAuthState
-from src.google.schemas import GoogleOAuth2FlowContext, GoogleOAuth2RedirectResponse
+from src.google.security import GoogleOAuthSecurity
+from src.google.schemas import (
+    GoogleOAuth2CredentialResponse,
+    GoogleOAuth2RedirectResponse,
+)
 
 
+# --------------- USE CASES (ORCHESTRATOR OF SERVICES AND SECURITY)
+async def initiate_oauth2(db: AsyncSession, valid_user: User) -> GoogleOAuth2RedirectResponse:
+    """Connect with Google, persist the connection state in DB, and return redirect payload.
+
+    Args:
+        db: Active async database session used to persist the OAuth state.
+        valid_user: Authenticated application user starting the OAuth flow.
+
+    Returns:
+        GoogleOAuth2RedirectResponse: Redirect data containing the Google
+        authorization URL and a user-facing message.
+
+    Example:
+        >>> async def run_example() -> str:
+        ...     response = await initiate_oauth2(db, valid_user)
+        ...     return response.auth_url
+    """
+    auth_url, state, code_verifier = GoogleOAuthSecurity.init_flow()
+
+    await GoogleOAuthService.create_state(
+        db=db,
+        valid_user=valid_user,
+        state=state,
+        code_verifier=code_verifier,
+    )
+    return GoogleOAuth2RedirectResponse(
+        auth_url=auth_url,
+        message="You are being redirected to Google for authorization.",
+    )
+
+
+async def exchange_code_for_credentials(
+    db: AsyncSession,
+    exchange_code: str,
+    oauth_state: GoogleOAuthState,
+) -> GoogleOAuth2CredentialResponse:
+    """Exchange the callback code, consume the OAuth state, and create a credential record.
+
+    Args:
+        db: Active async database session used for state consumption and credential persistence.
+        exchange_code: Authorization code returned by Google's OAuth2 callback.
+        oauth_state: Persisted OAuth state record containing the app user id and PKCE verifier.
+
+    Returns:
+        GoogleOAuth2CredentialResponse: JSON credentials payload.
+
+    Example:
+        >>> async def run_example() -> str:
+        ...     response = await exchange_code_for_credentials(db, exchange_code, oauth_state)
+        ...     return response.app_user_id
+    """
+    credentials = await GoogleOAuthSecurity.pkce_flow(exchange_code, oauth_state)
+    valid_user = await GoogleOAuthService.pop_state(db, oauth_state.state)
+
+    return await GoogleOAuthService.create_credentials(
+        db,
+        valid_user,
+        credentials,
+        oauth_state,
+    )
+
+# --------------- CRUD SERVICES
 class GoogleOAuthService:
+
     @staticmethod
     async def create_state(
         db: AsyncSession,
         valid_user: User,
-        flow_context: GoogleOAuth2FlowContext,
-    ) -> GoogleOAuth2RedirectResponse:
-        oauth_state = GoogleOAuthState(
-            state=flow_context.state,
+        state: str,
+        code_verifier: str | None,
+    ) -> GoogleOAuthState:
+        new_oauth_state = GoogleOAuthState(
+            state=state,
             app_user_id=str(valid_user.id),
-            code_verifier=flow_context.code_verifier,
+            code_verifier=code_verifier,
             created_time=datetime.now(timezone.utc),
         )
-        db.add(oauth_state)
+        db.add(new_oauth_state)
 
         await db.commit()
-        await db.refresh(oauth_state)
+        await db.refresh(new_oauth_state)
 
-        return GoogleOAuth2RedirectResponse(
-            auth_url=flow_context.auth_url,
-            message="You are being redirected to Google for authorization.",
-        )
+        return new_oauth_state
 
     @staticmethod
-    async def consume_state(db: AsyncSession, state: str) -> GoogleOAuthState | None:
+    async def get_state(db: AsyncSession, state: str) -> GoogleOAuthState:
         result = await db.execute(
             select(GoogleOAuthState).where(GoogleOAuthState.state == state)
         )
-        oauth_state = result.scalar_one_or_none()
+        return result.scalar_one_or_none()
+
+    @staticmethod
+    async def pop_state(db: AsyncSession, state: str) -> User | None:
+        oauth_state = await GoogleOAuthService.get_state(db, state)
         if oauth_state is None:
             return None
+
+        result = await db.execute(
+            select(User).where(User.id == int(oauth_state.app_user_id))
+        )
+        valid_user = result.scalar_one_or_none()
 
         await db.delete(oauth_state)
         await db.commit()
 
-        return oauth_state
+        return valid_user
+
+    @staticmethod
+    async def create_credentials(
+        db: AsyncSession,
+        valid_user: User | None,
+        credentials: Credentials,
+        oauth_state: GoogleOAuthState,
+    ) -> GoogleOAuth2CredentialResponse:
+        record = await GoogleOAuthService._save_credential_record(
+            db=db,
+            app_user_id=oauth_state.app_user_id,
+            credentials=credentials,
+            email_address=valid_user.email if valid_user else None,
+        )
+        return GoogleOAuth2CredentialResponse(
+            app_user_id=record.app_user_id,
+            scopes=record.scopes.split(","),
+            expiry=record.expiry,
+        )
 
     @staticmethod
     async def get_credential(
@@ -63,6 +153,20 @@ class GoogleOAuthService:
 
     @staticmethod
     async def upsert_credential(
+        db: AsyncSession,
+        app_user_id: str,
+        credentials: Credentials,
+        email_address: str | None = None,
+    ) -> GoogleOAuthCredential:
+        return await GoogleOAuthService._save_credential_record(
+            db=db,
+            app_user_id=app_user_id,
+            credentials=credentials,
+            email_address=email_address,
+        )
+
+    @staticmethod
+    async def _save_credential_record(
         db: AsyncSession,
         app_user_id: str,
         credentials: Credentials,
@@ -104,25 +208,14 @@ class GoogleOAuthService:
         return record
 
 
-def build_credentials(record: GoogleOAuthCredential) -> Credentials:
-    return Credentials(
-        token=record.access_token,
-        refresh_token=record.refresh_token,
-        token_uri=record.token_uri,
-        client_id=record.client_id,
-        client_secret=record.client_secret,
-        scopes=record.scopes.split(","),
-    )
-
-
 async def refresh_credential_if_needed(
     db: AsyncSession,
     record: GoogleOAuthCredential,
 ) -> GoogleOAuthCredential:
-    creds = build_credentials(record)
+    creds = GoogleOAuthSecurity.build_credentials(record)
     creds.expiry = record.expiry
     if creds.expired and creds.refresh_token:
-        await to_thread.run_sync(creds.refresh, Request())
+        await GoogleOAuthSecurity.refresh_credentials(creds)
         await GoogleOAuthService.upsert_credential(
             db=db,
             app_user_id=record.app_user_id,
@@ -134,16 +227,6 @@ async def refresh_credential_if_needed(
             return refreshed
 
     return record
-
-
-def create_gmail_service(record: GoogleOAuthCredential):
-    creds = build_credentials(record)
-    creds.expiry = record.expiry
-    return create_gmail_service_from_credentials(creds)
-
-
-def create_gmail_service_from_credentials(credentials: Credentials):
-    return build("gmail", "v1", credentials=credentials, cache_discovery=False)
 
 
 async def ensure_google_oauth_schema(db: AsyncSession) -> None:

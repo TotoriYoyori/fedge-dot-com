@@ -14,23 +14,21 @@ class GoogleOAuth2NextSteps(CustomBaseModel):
     inbox: str
 
 
-class GoogleOAuth2FlowContext(CustomBaseModel):
-    auth_url: str = Field(..., min_length=1)
-    state: str = Field(..., min_length=1)
-    code_verifier: str | None = Field(default=None, min_length=1)
-
-
-class GoogleCredentialResponse(CustomBaseModel):
+class DebugCredentialResponse(CustomBaseModel):
     app_user_id: str
-    email_address: str | None = None
+    token: str | None = None
+    refresh_token: str | None = None
+    token_uri: str | None = None
+    client_id: str | None = None
+    client_secret: str | None = None
     scopes: list[str]
     expiry: datetime | None = None
 
 
-class GoogleOAuth2CallbackResponse(CustomBaseModel):
-    message: str
-    credential: GoogleCredentialResponse
-    next_steps: GoogleOAuth2NextSteps
+class GoogleOAuth2CredentialResponse(CustomBaseModel):
+    app_user_id: str
+    scopes: list[str]
+    expiry: datetime | None = None
 
 
 class GoogleInboxMessage(CustomBaseModel):
