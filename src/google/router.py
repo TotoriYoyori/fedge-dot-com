@@ -18,7 +18,6 @@ from src.google.schemas import (
 )
 
 from src.google.service import (
-    GoogleOAuthService,
     exchange_code_for_credentials,
     initiate_oauth2,
 )

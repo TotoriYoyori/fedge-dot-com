@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from anyio import to_thread
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -75,7 +77,26 @@ class GoogleOAuthSecurity:
         return verified_flow.credentials
 
     @staticmethod
-    def build_credentials(record: GoogleOAuthCredential) -> Credentials:
+    async def build_app_credential_records(credentials: Credentials, app_user_id: str) -> GoogleOAuthCredential:
+        google_email = await GoogleOAuthSecurity.get_authorized_email(credentials)
+        now = datetime.now(timezone.utc)
+
+        return GoogleOAuthCredential(
+            app_user_id=app_user_id,
+            access_token=credentials.token,
+            refresh_token=credentials.refresh_token,
+            token_uri=credentials.token_uri or "https://oauth2.googleapis.com/token",
+            client_id=credentials.client_id,
+            client_secret=credentials.client_secret,
+            scopes=",".join(credentials.scopes or []),
+            expiry=credentials.expiry,
+            email_address=google_email,
+            created_time=now,
+            updated_time=now,
+        )
+
+    @staticmethod
+    def build_google_credentials(record: GoogleOAuthCredential) -> Credentials:
         return Credentials(
             token=record.access_token,
             refresh_token=record.refresh_token,
@@ -92,10 +113,18 @@ class GoogleOAuthSecurity:
 
     @staticmethod
     def create_gmail_service(record: GoogleOAuthCredential):
-        creds = GoogleOAuthSecurity.build_credentials(record)
+        creds = GoogleOAuthSecurity.build_google_credentials(record)
         creds.expiry = record.expiry
         return GoogleOAuthSecurity.create_gmail_service_from_credentials(creds)
 
     @staticmethod
     def create_gmail_service_from_credentials(credentials: Credentials):
         return build("gmail", "v1", credentials=credentials, cache_discovery=False)
+
+    @staticmethod
+    async def get_authorized_email(credentials: Credentials) -> str | None:
+        service = GoogleOAuthSecurity.create_gmail_service_from_credentials(credentials)
+        profile = await to_thread.run_sync(
+            lambda: service.users().getProfile(userId="me").execute()
+        )
+        return profile.get("emailAddress")

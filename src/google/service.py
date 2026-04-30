@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timezone
 
 from google.oauth2.credentials import Credentials
@@ -48,8 +49,8 @@ async def exchange_code_for_credentials(
     db: AsyncSession,
     exchange_code: str,
     oauth_state: GoogleOAuthState,
-) -> GoogleOAuth2CredentialResponse:
-    """Exchange the callback code, consume the OAuth state, and create a credential record.
+) -> GoogleOAuthCredential:
+    """Exchange the callback code and persist the final Google credential record.
 
     Args:
         db: Active async database session used for state consumption and credential persistence.
@@ -57,7 +58,7 @@ async def exchange_code_for_credentials(
         oauth_state: Persisted OAuth state record containing the app user id and PKCE verifier.
 
     Returns:
-        GoogleOAuth2CredentialResponse: JSON credentials payload.
+        GoogleOAuth2CredentialResponse: Public callback response for the connected Google account.
 
     Example:
         >>> async def run_example() -> str:
@@ -65,14 +66,15 @@ async def exchange_code_for_credentials(
         ...     return response.app_user_id
     """
     credentials = await GoogleOAuthSecurity.pkce_flow(exchange_code, oauth_state)
-    valid_user = await GoogleOAuthService.pop_state(db, oauth_state.state)
-
-    return await GoogleOAuthService.create_credentials(
-        db,
-        valid_user,
+    record = await GoogleOAuthSecurity.build_app_credential_records(
         credentials,
-        oauth_state,
+        oauth_state.app_user_id,
     )
+    record = await GoogleOAuthService.create_credential_record(db, record)
+
+    await GoogleOAuthService.delete_state(db, oauth_state)
+
+    return record
 
 # --------------- CRUD SERVICES
 class GoogleOAuthService:
@@ -105,39 +107,21 @@ class GoogleOAuthService:
         return result.scalar_one_or_none()
 
     @staticmethod
-    async def pop_state(db: AsyncSession, state: str) -> User | None:
-        oauth_state = await GoogleOAuthService.get_state(db, state)
-        if oauth_state is None:
-            return None
-
-        result = await db.execute(
-            select(User).where(User.id == int(oauth_state.app_user_id))
-        )
-        valid_user = result.scalar_one_or_none()
-
+    async def delete_state(db: AsyncSession, oauth_state: GoogleOAuthState) -> None:
         await db.delete(oauth_state)
         await db.commit()
 
-        return valid_user
-
     @staticmethod
-    async def create_credentials(
+    async def create_credential_record(
         db: AsyncSession,
-        valid_user: User | None,
-        credentials: Credentials,
-        oauth_state: GoogleOAuthState,
-    ) -> GoogleOAuth2CredentialResponse:
-        record = await GoogleOAuthService._save_credential_record(
-            db=db,
-            app_user_id=oauth_state.app_user_id,
-            credentials=credentials,
-            email_address=valid_user.email if valid_user else None,
-        )
-        return GoogleOAuth2CredentialResponse(
-            app_user_id=record.app_user_id,
-            scopes=record.scopes.split(","),
-            expiry=record.expiry,
-        )
+        record: GoogleOAuthCredential,
+    ) -> GoogleOAuthCredential:
+        db.add(record)
+
+        await db.commit()
+        await db.refresh(record)
+
+        return record
 
     @staticmethod
     async def get_credential(
@@ -154,55 +138,20 @@ class GoogleOAuthService:
     @staticmethod
     async def upsert_credential(
         db: AsyncSession,
-        app_user_id: str,
+        record: GoogleOAuthCredential,
         credentials: Credentials,
         email_address: str | None = None,
     ) -> GoogleOAuthCredential:
-        return await GoogleOAuthService._save_credential_record(
-            db=db,
-            app_user_id=app_user_id,
-            credentials=credentials,
-            email_address=email_address,
-        )
-
-    @staticmethod
-    async def _save_credential_record(
-        db: AsyncSession,
-        app_user_id: str,
-        credentials: Credentials,
-        email_address: str | None = None,
-    ) -> GoogleOAuthCredential:
-        record = await GoogleOAuthService.get_credential(db, app_user_id)
-        now = datetime.now(timezone.utc)
-        scopes = ",".join(credentials.scopes or [])
-
-        if record is None:
-            record = GoogleOAuthCredential(
-                app_user_id=app_user_id,
-                access_token=credentials.token,
-                refresh_token=credentials.refresh_token,
-                token_uri=credentials.token_uri
-                or "https://oauth2.googleapis.com/token",
-                client_id=credentials.client_id,
-                client_secret=credentials.client_secret,
-                scopes=scopes,
-                expiry=credentials.expiry,
-                email_address=email_address,
-                created_time=now,
-                updated_time=now,
-            )
-            db.add(record)
-        else:
-            record.access_token = credentials.token
-            record.refresh_token = credentials.refresh_token or record.refresh_token
-            record.token_uri = credentials.token_uri or record.token_uri
-            record.client_id = credentials.client_id or record.client_id
-            record.client_secret = credentials.client_secret or record.client_secret
-            record.scopes = scopes or record.scopes
-            record.expiry = credentials.expiry
-            record.email_address = email_address or record.email_address
-            record.updated_time = now
-
+        credential_payload = json.loads(credentials.to_json())
+        record.access_token = credential_payload.get("token")
+        record.refresh_token = credential_payload.get("refresh_token") or record.refresh_token
+        record.token_uri = credential_payload.get("token_uri") or record.token_uri
+        record.client_id = credential_payload.get("client_id") or record.client_id
+        record.client_secret = credential_payload.get("client_secret") or record.client_secret
+        record.scopes = ",".join(credential_payload.get("scopes") or []) or record.scopes
+        record.expiry = credentials.expiry
+        record.email_address = email_address or record.email_address
+        record.updated_time = datetime.now(timezone.utc)
         await db.commit()
         await db.refresh(record)
         return record
@@ -212,13 +161,13 @@ async def refresh_credential_if_needed(
     db: AsyncSession,
     record: GoogleOAuthCredential,
 ) -> GoogleOAuthCredential:
-    creds = GoogleOAuthSecurity.build_credentials(record)
+    creds = GoogleOAuthSecurity.build_google_credentials(record)
     creds.expiry = record.expiry
     if creds.expired and creds.refresh_token:
         await GoogleOAuthSecurity.refresh_credentials(creds)
         await GoogleOAuthService.upsert_credential(
             db=db,
-            app_user_id=record.app_user_id,
+            record=record,
             credentials=creds,
             email_address=record.email_address,
         )
