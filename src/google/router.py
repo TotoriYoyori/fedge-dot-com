@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
@@ -7,10 +8,11 @@ from src.auth.dependencies import require_role
 from src.auth.models import User
 from src.database import get_db
 from src.google.dependencies import (
+    valid_google_oauth_credential,
     valid_google_oauth2_exchange_code,
     valid_google_oauth2_state,
 )
-from src.google.models import GoogleOAuthState
+from src.google.models import GoogleOAuthCredential, GoogleOAuthState
 from src.google.schemas import (
     GoogleOAuth2CredentialResponse,
     GoogleInboxResponse,
@@ -18,8 +20,10 @@ from src.google.schemas import (
 )
 
 from src.google.service import (
+    connect_gmail_service,
     exchange_code_for_credentials,
     initiate_oauth2,
+    list_gmail_inbox,
 )
 
 # --------------- API GOOGLE OAUTH ROUTER
@@ -79,83 +83,44 @@ async def callback(
 
 @router.post(
     "/gmail",
+    response_model=GoogleOAuth2CredentialResponse,
     status_code=status.HTTP_200_OK,
     summary="Connect Gmail service",
     description=(
-        "Placeholder route for the Gmail-specific connection flow that builds "
-        "the Gmail service and syncs profile data using previously persisted "
+        "Builds the Gmail service and syncs profile data using previously persisted "
         "Google OAuth2 credentials."
     ),
+    responses={
+        200: {
+            "model": GoogleOAuth2CredentialResponse,
+            "description": "Successfully synced Google OAuth2 credentials with Gmail",
+        },
+        404: {"description": "Google OAuth credential not found for app user"},
+    },
 )
 async def gmail(
-    valid_user: Annotated[User, Depends(require_role("merchant", "admin"))],
+    record: Annotated[GoogleOAuthCredential, Depends(valid_google_oauth_credential)],
     db: AsyncSession = Depends(get_db),
 ):
-    _ = (valid_user, db)
-    return {"message": "Gmail connection flow placeholder."}
-
-
-@router.get(
-    "/callback/profile",
-    summary="Handle deferred Google profile work",
-    description=(
-        "Placeholder route for the Gmail service and profile lookup work that "
-        "used to live in the OAuth2 callback."
-    ),
-    status_code=status.HTTP_200_OK,
-)
-async def callback_profile(
-    exchange_code: Annotated[str, Depends(valid_google_oauth2_exchange_code)],
-    oauth_state: Annotated[GoogleOAuthState, Depends(valid_google_oauth2_state)],
-    db: AsyncSession = Depends(get_db),
-):
-    # Placeholder for the next Gmail-specific step that will use previously
-    # persisted base OAuth2 credentials to build the Gmail service and sync
-    # profile data into the app credential new_record.
-    pass
-
-
-@router.get("/me", response_model=GoogleOAuth2CredentialResponse)
-async def me(
-    app_user_id: str = Query(..., min_length=1),
-    db: AsyncSession = Depends(get_db),
-):
-    pass
-    # new_record = await GoogleOAuthService.get_credential(db, app_user_id)
-    # if new_record is None:
-    #     raise HTTPException(status_code=404, detail="Credential not found for app user")
-    #
-    # return GoogleCredentialResponse(
-    #     app_user_id=new_record.app_user_id,
-    #     email_address=new_record.email_address,
-    #     scopes=new_record.scopes.split(","),
-    #     expiry=new_record.expiry,
-    # )
+    return await connect_gmail_service(db, record)
 
 
 @router.get("/inbox", response_model=GoogleInboxResponse)
 async def list_inbox(
-    app_user_id: str = Query(..., min_length=1),
-    max_results: int = Query(default=10, ge=1, le=100),
+    record: Annotated[GoogleOAuthCredential, Depends(valid_google_oauth_credential)],
+    max_results: int = Query(default=5, ge=1, le=100),
+    sender: str | None = Query(default=None),
+    label: str | None = Query(default=None),
+    after: date | None = Query(default=None),
+    before: date | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
 ):
-    pass
-    # new_record = await GoogleOAuthService.get_credential(db, app_user_id)
-    # if new_record is None:
-    #     raise HTTPException(status_code=404, detail="Credential not found for app user")
-    #
-    # new_record = await refresh_credential_if_needed(db, new_record)
-    # service = GoogleOAuthSecurity.create_gmail_service(new_record)
-    # results = (
-    #     service.users()
-    #     .messages()
-    #     .list(
-    #         userId="me",
-    #         maxResults=max_results,
-    #     )
-    #     .execute()
-    # )
-    # return {
-    #     "messages": results.get("messages", []),
-    #     "resultSizeEstimate": results.get("resultSizeEstimate"),
-    # }
+    return await list_gmail_inbox(
+        db=db,
+        record=record,
+        max_results=max_results,
+        sender=sender,
+        label=label,
+        after=after,
+        before=before,
+    )

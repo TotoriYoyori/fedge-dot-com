@@ -28,6 +28,10 @@ class InvalidPKCE(Exception):
     pass
 
 
+class CredentialNotFound(Exception):
+    pass
+
+
 class GoogleExceptionHandler(BaseExceptionHandler):
     def register_exception_handlers(self) -> None:
         @self.app.exception_handler(ClientSecretNotFound)
@@ -79,4 +83,13 @@ class GoogleExceptionHandler(BaseExceptionHandler):
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={"detail": "Google OAuth PKCE verifier is invalid."},
+            )
+
+        @self.app.exception_handler(CredentialNotFound)
+        async def credential_not_found_handler(
+            request: Request, _exc: CredentialNotFound
+        ):
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={"detail": "Google OAuth credential not found for app user."},
             )

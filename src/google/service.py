@@ -1,5 +1,7 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
+from email.utils import parsedate_to_datetime
 
+import asyncer
 from google.oauth2.credentials import Credentials
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -83,6 +85,146 @@ async def exchange_code_for_credentials(
         scopes=new_record.scopes,
         expiry=new_record.expiry,
     )
+
+
+async def connect_gmail_service(
+    db: AsyncSession,
+    record: GoogleOAuthCredential,
+) -> GoogleOAuth2CredentialResponse:
+    record = await refresh_credential_if_needed(db, record)
+    credentials = GoogleOAuthSecurity.build_google_credentials(record)
+    credentials.expiry = record.expiry
+
+    email_address = await GoogleOAuthSecurity.get_authorized_email(credentials)
+    record = await GoogleOAuthService.sync_gmail_profile(db, record, email_address)
+
+    return GoogleOAuth2CredentialResponse(
+        app_user_id=record.app_user_id,
+        scopes=record.scopes,
+        expiry=record.expiry,
+    )
+
+
+async def list_gmail_inbox(
+    db: AsyncSession,
+    record: GoogleOAuthCredential,
+    max_results: int,
+    sender: str | None = None,
+    label: str | None = None,
+    after: date | None = None,
+    before: date | None = None,
+) -> dict:
+    record = await refresh_credential_if_needed(db, record)
+    service = GoogleOAuthSecurity.create_gmail_service(record)
+    gmail_query = _build_gmail_inbox_query(
+        sender=sender,
+        label=label,
+        after=after,
+        before=before,
+    )
+
+    results = await asyncer.asyncify(
+        lambda: service.users().messages().list(
+            userId="me",
+            maxResults=max_results,
+            q=gmail_query,
+        ).execute()
+    )()
+
+    # --------------- EMAIL PARSING / ENRICHMENT (REFactor boundary)
+    # FIXME: Move inbox message enrichment behind a dedicated parser/service layer.
+    # The current implementation mixes listing, per-message fetches, and response
+    # shaping inside one function, which should be split before this grows further.
+    message_refs = results.get("messages", [])
+    message_details = await asyncer.asyncify(
+        lambda: [
+            service.users().messages().get(
+                userId="me",
+                id=message["id"],
+                format="metadata",
+                metadataHeaders=["Date", "From", "To", "Cc", "Subject"],
+            ).execute()
+            for message in message_refs
+        ]
+    )()
+    # --------------- END EMAIL PARSING / ENRICHMENT
+
+    return {
+        "messages": [_serialize_gmail_message(message) for message in message_details],
+        "result_size_estimate": results.get("resultSizeEstimate"),
+    }
+
+
+def _serialize_gmail_message(message: dict) -> dict:
+    headers = _extract_gmail_headers(message.get("payload", {}).get("headers", []))
+    date_header = headers.get("date")
+
+    return {
+        "id": message["id"],
+        "thread_id": message.get("threadId"),
+        "subject": headers.get("subject"),
+        "sender": headers.get("from"),
+        "to": headers.get("to"),
+        "cc": headers.get("cc"),
+        "snippet": message.get("snippet"),
+        "date": _parse_gmail_date_header(date_header),
+        "date_header": date_header,
+        "internal_date": _parse_gmail_internal_date(message.get("internalDate")),
+        "label_ids": message.get("labelIds", []),
+    }
+
+
+def _build_gmail_inbox_query(
+    sender: str | None,
+    label: str | None,
+    after: date | None,
+    before: date | None,
+) -> str | None:
+    query_parts: list[str] = []
+
+    if sender:
+        query_parts.append(f"from:{sender.strip()}")
+    if label:
+        query_parts.append(f"label:{label.strip()}")
+    if after:
+        query_parts.append(f"after:{after.isoformat()}")
+    if before:
+        query_parts.append(f"before:{before.isoformat()}")
+
+    return " ".join(query_parts) or None
+
+
+def _extract_gmail_headers(headers: list[dict]) -> dict[str, str]:
+    return {
+        header["name"].lower(): header["value"]
+        for header in headers
+        if header.get("name") and header.get("value")
+    }
+
+
+def _parse_gmail_date_header(date_header: str | None) -> datetime | None:
+    if not date_header:
+        return None
+
+    try:
+        parsed = parsedate_to_datetime(date_header)
+    except (TypeError, ValueError, IndexError):
+        return None
+
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+
+    return parsed
+
+
+def _parse_gmail_internal_date(internal_date: str | None) -> datetime | None:
+    if not internal_date:
+        return None
+
+    try:
+        return datetime.fromtimestamp(int(internal_date) / 1000, tz=timezone.utc)
+    except (TypeError, ValueError, OSError):
+        return None
 
 
 # --------------- CRUD SERVICES
@@ -191,8 +333,24 @@ class GoogleOAuthService:
         record.expiry = credentials.expiry
         record.email_address = email_address or record.email_address
         record.updated_time = datetime.now(timezone.utc)
+
         await db.commit()
         await db.refresh(record)
+
+        return record
+
+    @staticmethod
+    async def sync_gmail_profile(
+        db: AsyncSession,
+        record: GoogleOAuthCredential,
+        email_address: str | None,
+    ) -> GoogleOAuthCredential:
+        record.email_address = email_address or record.email_address
+        record.updated_time = datetime.now(timezone.utc)
+
+        await db.commit()
+        await db.refresh(record)
+
         return record
 
 
@@ -202,6 +360,7 @@ async def refresh_credential_if_needed(
 ) -> GoogleOAuthCredential:
     creds = GoogleOAuthSecurity.build_google_credentials(record)
     creds.expiry = record.expiry
+
     if creds.expired and creds.refresh_token:
         await GoogleOAuthSecurity.refresh_credentials(creds)
         await GoogleOAuthService.upsert_credential(

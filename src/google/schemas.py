@@ -31,6 +31,15 @@ class GoogleOAuth2CredentialResponse(CustomBaseModel):
 class GoogleInboxMessage(CustomBaseModel):
     id: str
     thread_id: str | None = Field(default=None)
+    subject: str | None = Field(default=None)
+    sender: str | None = Field(default=None)
+    to: str | None = Field(default=None)
+    cc: str | None = Field(default=None)
+    snippet: str | None = Field(default=None)
+    date: datetime | None = Field(default=None)
+    date_header: str | None = Field(default=None)
+    internal_date: datetime | None = Field(default=None)
+    label_ids: list[str] = Field(default_factory=list)
 
 
 class GoogleInboxResponse(CustomBaseModel):

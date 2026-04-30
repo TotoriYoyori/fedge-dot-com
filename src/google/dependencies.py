@@ -3,12 +3,15 @@ from typing import Annotated
 from fastapi import Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.auth.dependencies import require_role
+from src.auth.models import User
 from src.database import get_db
 from src.google.exceptions import (
+    CredentialNotFound,
     ExchangeCodeNotFound,
     StateNotFound,
 )
-from src.google.models import GoogleOAuthState
+from src.google.models import GoogleOAuthCredential, GoogleOAuthState
 from src.google.service import GoogleOAuthService
 
 
@@ -33,3 +36,14 @@ async def valid_google_oauth2_state(
         raise StateNotFound
 
     return oauth_state
+
+
+async def valid_google_oauth_credential(
+    valid_user: Annotated[User, Depends(require_role("merchant", "admin"))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> GoogleOAuthCredential:
+    record = await GoogleOAuthService.get_credential(db, str(valid_user.id))
+    if record is None:
+        raise CredentialNotFound
+
+    return record
