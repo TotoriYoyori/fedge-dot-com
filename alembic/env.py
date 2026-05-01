@@ -9,10 +9,7 @@ from src.database import Base
 # ----- Current tracking models -----
 from src.auth.models import User
 from src.google.models import GoogleOAuthCredential, GoogleOAuthState
-# ------------------------------------
-
-# ----- Coming in future updates -----
-# from src.orders.models import Orders
+from src.orders.models import Orders
 # ------------------------------------
 
 # ----- The Alembic Config object, provides access to the values within the alembic.ini file.

@@ -35,7 +35,7 @@ class GoogleInboxMessage(CustomBaseModel):
     sender: str | None = Field(default=None)
     to: str | None = Field(default=None)
     cc: str | None = Field(default=None)
-    snippet: str | None = Field(default=None)
+    body: str | None = Field(default=None)
     date: datetime | None = Field(default=None)
     date_header: str | None = Field(default=None)
     internal_date: datetime | None = Field(default=None)

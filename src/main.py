@@ -20,6 +20,7 @@ from src.users.pages import page as users_page
 from src.auth.router import router as auth_router
 from src.google.router import router as google_router
 from src.notification.router import router as notification_router
+from src.orders.router import router as orders_router
 
 
 # --------------- APPLICATION LIFECYCLE EVENTS
@@ -87,3 +88,4 @@ app.include_router(notification_page)
 app.include_router(auth_router)
 app.include_router(notification_router)
 app.include_router(google_router)
+app.include_router(orders_router)

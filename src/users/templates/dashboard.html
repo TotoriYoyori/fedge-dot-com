@@ -160,6 +160,7 @@
     .status-empty { border: 1px solid #ccc; background: transparent; }
     .status-red { background: #ff4d4d; }
     .status-green { background: #2ecc71; }
+    .status-amber { background: #f39c12; }
 
     .booking-info {
         display: none;
@@ -258,204 +259,39 @@
             </div>
 
             <div class="orders-grid">
-                <!-- Filler Order 1 -->
+                {% if orders %}
+                {% for order in orders %}
                 <div class="order-card">
-                    <div class="order-banner" style="background-image: url('/static/users/img/spa_1.jpg');"></div>
+                    <div class="order-banner" style="background-image: url('/static/users/img/spa_{{ ((loop.index0 % 5) + 1) }}.jpg');"></div>
                     <div class="order-content">
-                        <h4>Jane Doe</h4>
-                        <p><strong>Treatment:</strong> Hot Rock Massage (60 mins)</p>
-                        <p><strong>Price:</strong> 850 SEK</p>
-                        <p><strong>Location:</strong> Stockholm City</p>
-                        <p><strong>Email:</strong> jane.doe@example.com</p>
-                        <p><strong>Order #:</strong> ORD-2024-001</p>
-                        <p><strong>Date:</strong> 2024-03-15</p>
+                        <h4>{{ order.full_name or "Unknown customer" }}</h4>
+                        <p><strong>Treatment:</strong> {{ order.treatment_selected or "Not provided" }}</p>
+                        <p><strong>Location:</strong> {{ order.location or "Not provided" }}</p>
+                        <p><strong>Email:</strong> {{ order.office_email or order.private_email or "Not provided" }}</p>
+                        <p><strong>Order #:</strong> {{ order.order_number }}</p>
+                        <p><strong>Date:</strong> {{ order.order_date or "Not provided" }}</p>
                     </div>
                     <div class="order-footer">
                         <div class="status-row">
-                            STATUS <span class="status-circle status-empty"></span> <small>Not Booked</small>
-                        </div>
-                        <a href="{{ url_for('send_notification_page') }}" class="btn-action btn-secondary remind-btn" style="text-decoration: none;">Remind</a>
-                    </div>
-                </div>
-
-                <!-- Filler Order 2 -->
-                <div class="order-card">
-                    <div class="order-banner" style="background-image: url('/static/users/img/spa_2.jpg');"></div>
-                    <div class="order-content">
-                        <h4>John Smith</h4>
-                        <p><strong>Treatment:</strong> Facial Care (45 mins)</p>
-                        <p><strong>Price:</strong> 950 SEK</p>
-                        <p><strong>Location:</strong> Gothenburg East</p>
-                        <p><strong>Email:</strong> j.smith@provider.se</p>
-                        <p><strong>Order #:</strong> ORD-2024-002</p>
-                        <p><strong>Date:</strong> 2024-03-16</p>
-                    </div>
-                    <div class="order-footer">
-                        <div class="status-row">
-                            STATUS <span class="status-circle status-green"></span> <small>Booked</small>
-                        </div>
-                        <div class="booking-info">
-                            <p><strong>Service:</strong> Bokadirekt Integration</p>
-                            <p><strong>Booking ID:</strong> BD-88291</p>
-                            <p><strong>Date:</strong> 2024-04-10 14:00</p>
-                        </div>
-                        <a href="{{ url_for('send_notification_page') }}" class="btn-action btn-secondary remind-btn" style="text-decoration: none;">Remind</a>
-                    </div>
-                </div>
-
-                <!-- Filler Order 3 -->
-                <div class="order-card">
-                    <div class="order-banner" style="background-image: url('/static/users/img/spa_3.jpg');"></div>
-                    <div class="order-content">
-                        <h4>Alice Johnson</h4>
-                        <p><strong>Treatment:</strong> Body Massage (50 mins)</p>
-                        <p><strong>Price:</strong> 750 SEK</p>
-                        <p><strong>Location:</strong> Malmö Central</p>
-                        <p><strong>Email:</strong> alice.j@gmail.com</p>
-                        <p><strong>Order #:</strong> ORD-2024-003</p>
-                        <p><strong>Date:</strong> 2024-03-18</p>
-                    </div>
-                    <div class="order-footer">
-                        <div class="status-row">
+                            {% if order.is_cancel %}
                             STATUS <span class="status-circle status-red"></span> <small>Cancelled</small>
+                            {% else %}
+                            STATUS <span class="status-circle status-amber"></span> <small>Pending Booking</small>
+                            {% endif %}
                         </div>
                         <a href="{{ url_for('send_notification_page') }}" class="btn-action btn-secondary remind-btn" style="text-decoration: none;">Remind</a>
                     </div>
                 </div>
-
-                <!-- Filler Order 4 -->
-                <div class="order-card">
-                    <div class="order-banner" style="background-image: url('/static/users/img/spa_4.jpg');"></div>
-                    <div class="order-content">
-                        <h4>Robert Brown</h4>
-                        <p><strong>Treatment:</strong> Couple Massage (90 mins)</p>
-                        <p><strong>Price:</strong> 1800 SEK</p>
-                        <p><strong>Location:</strong> Uppsala North</p>
-                        <p><strong>Email:</strong> rb@outlook.com</p>
-                        <p><strong>Order #:</strong> ORD-2024-004</p>
-                        <p><strong>Date:</strong> 2024-03-20</p>
-                    </div>
-                    <div class="order-footer">
-                        <div class="status-row">
-                            STATUS <span class="status-circle status-empty"></span> <small>Not Booked</small>
-                        </div>
-                        <a href="{{ url_for('send_notification_page') }}" class="btn-action btn-secondary remind-btn" style="text-decoration: none;">Remind</a>
-                    </div>
+                {% endfor %}
+                {% else %}
+                <div style="grid-column: 1 / -1; padding: 2rem; border: 1px solid #eee; border-radius: 8px; text-align: center; color: #777;">
+                    No persisted orders yet. Use the orders fetch flow to import data from Gmail first.
                 </div>
-
-                <!-- Filler Order 5 -->
-                <div class="order-card">
-                    <div class="order-banner" style="background-image: url('/static/users/img/spa_5.jpg');"></div>
-                    <div class="order-content">
-                        <h4>Emily Davis</h4>
-                        <p><strong>Treatment:</strong> Foot Massage (45 mins)</p>
-                        <p><strong>Price:</strong> 550 SEK</p>
-                        <p><strong>Location:</strong> Visby Harbor</p>
-                        <p><strong>Email:</strong> emily.d@visby.se</p>
-                        <p><strong>Order #:</strong> ORD-2024-005</p>
-                        <p><strong>Date:</strong> 2024-03-22</p>
-                    </div>
-                    <div class="order-footer">
-                        <div class="status-row">
-                            STATUS <span class="status-circle status-green"></span> <small>Booked</small>
-                        </div>
-                        <div class="booking-info">
-                            <p><strong>Service:</strong> Bokadirekt Integration</p>
-                            <p><strong>Booking ID:</strong> BD-99102</p>
-                            <p><strong>Date:</strong> 2024-05-01 10:30</p>
-                        </div>
-                        <a href="{{ url_for('send_notification_page') }}" class="btn-action btn-secondary remind-btn" style="text-decoration: none;">Remind</a>
-                    </div>
-                </div>
-
-                <!-- Filler Order 6 -->
-                <div class="order-card">
-                    <div class="order-banner" style="background-image: url('/static/users/img/spa_1.jpg');"></div>
-                    <div class="order-content">
-                        <h4>Michael Wilson</h4>
-                        <p><strong>Treatment:</strong> Hot Rock Massage (60 mins)</p>
-                        <p><strong>Price:</strong> 850 SEK</p>
-                        <p><strong>Location:</strong> Lund Central</p>
-                        <p><strong>Email:</strong> mw@university.se</p>
-                        <p><strong>Order #:</strong> ORD-2024-006</p>
-                        <p><strong>Date:</strong> 2024-03-25</p>
-                    </div>
-                    <div class="order-footer">
-                        <div class="status-row">
-                            STATUS <span class="status-circle status-red"></span> <small>Cancelled</small>
-                        </div>
-                        <a href="{{ url_for('send_notification_page') }}" class="btn-action btn-secondary remind-btn" style="text-decoration: none;">Remind</a>
-                    </div>
-                </div>
-
-                <!-- Filler Order 7 -->
-                <div class="order-card">
-                    <div class="order-banner" style="background-image: url('/static/users/img/spa_2.jpg');"></div>
-                    <div class="order-content">
-                        <h4>Sarah Miller</h4>
-                        <p><strong>Treatment:</strong> Facial Care (45 mins)</p>
-                        <p><strong>Price:</strong> 950 SEK</p>
-                        <p><strong>Location:</strong> Örebro City</p>
-                        <p><strong>Email:</strong> sarah.m@web.de</p>
-                        <p><strong>Order #:</strong> ORD-2024-007</p>
-                        <p><strong>Date:</strong> 2024-03-27</p>
-                    </div>
-                    <div class="order-footer">
-                        <div class="status-row">
-                            STATUS <span class="status-circle status-empty"></span> <small>Not Booked</small>
-                        </div>
-                        <a href="{{ url_for('send_notification_page') }}" class="btn-action btn-secondary remind-btn" style="text-decoration: none;">Remind</a>
-                    </div>
-                </div>
-
-                <!-- Filler Order 8 -->
-                <div class="order-card">
-                    <div class="order-banner" style="background-image: url('/static/users/img/spa_3.jpg');"></div>
-                    <div class="order-content">
-                        <h4>David Taylor</h4>
-                        <p><strong>Treatment:</strong> Body Massage (50 mins)</p>
-                        <p><strong>Price:</strong> 750 SEK</p>
-                        <p><strong>Location:</strong> Linköping South</p>
-                        <p><strong>Email:</strong> david.t@sports.se</p>
-                        <p><strong>Order #:</strong> ORD-2024-008</p>
-                        <p><strong>Date:</strong> 2024-03-28</p>
-                    </div>
-                    <div class="order-footer">
-                        <div class="status-row">
-                            STATUS <span class="status-circle status-green"></span> <small>Booked</small>
-                        </div>
-                        <div class="booking-info">
-                            <p><strong>Service:</strong> Bokadirekt Integration</p>
-                            <p><strong>Booking ID:</strong> BD-10293</p>
-                            <p><strong>Date:</strong> 2024-04-15 09:00</p>
-                        </div>
-                        <a href="{{ url_for('send_notification_page') }}" class="btn-action btn-secondary remind-btn" style="text-decoration: none;">Remind</a>
-                    </div>
-                </div>
-
-                <!-- Filler Order 9 -->
-                <div class="order-card">
-                    <div class="order-banner" style="background-image: url('/static/users/img/spa_5.jpg');"></div>
-                    <div class="order-content">
-                        <h4>Anna Larsson</h4>
-                        <p><strong>Treatment:</strong> Foot Massage (45 mins)</p>
-                        <p><strong>Price:</strong> 550 SEK</p>
-                        <p><strong>Location:</strong> Stockholm Östermalm</p>
-                        <p><strong>Email:</strong> anna.l@spa.se</p>
-                        <p><strong>Order #:</strong> ORD-2024-009</p>
-                        <p><strong>Date:</strong> 2024-03-30</p>
-                    </div>
-                    <div class="order-footer">
-                        <div class="status-row">
-                            STATUS <span class="status-circle status-empty"></span> <small>Not Booked</small>
-                        </div>
-                        <a href="{{ url_for('send_notification_page') }}" class="btn-action btn-secondary remind-btn" style="text-decoration: none;">Remind</a>
-                    </div>
-                </div>
+                {% endif %}
             </div>
 
             <div style="margin-top: 2rem; padding: 1.5rem; background: #f9f9f9; border-radius: 4px; text-align: center;">
-                <p style="color: #888; margin: 0;">End of order list. New orders will appear at the top.</p>
+                <p style="color: #888; margin: 0;">Displaying {{ orders_count or 0 }} persisted order{{ '' if (orders_count or 0) == 1 else 's' }}.</p>
             </div>
         </div>
     </div>

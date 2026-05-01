@@ -1,5 +1,7 @@
 from datetime import date, datetime, timezone
 from email.utils import parsedate_to_datetime
+from base64 import urlsafe_b64decode
+from html.parser import HTMLParser
 
 import asyncer
 from google.oauth2.credentials import Credentials
@@ -141,8 +143,7 @@ async def list_gmail_inbox(
             service.users().messages().get(
                 userId="me",
                 id=message["id"],
-                format="metadata",
-                metadataHeaders=["Date", "From", "To", "Cc", "Subject"],
+                format="full",
             ).execute()
             for message in message_refs
         ]
@@ -166,7 +167,7 @@ def _serialize_gmail_message(message: dict) -> dict:
         "sender": headers.get("from"),
         "to": headers.get("to"),
         "cc": headers.get("cc"),
-        "snippet": message.get("snippet"),
+        "body": _extract_gmail_body_text(message.get("payload", {})),
         "date": _parse_gmail_date_header(date_header),
         "date_header": date_header,
         "internal_date": _parse_gmail_internal_date(message.get("internalDate")),
@@ -200,6 +201,68 @@ def _extract_gmail_headers(headers: list[dict]) -> dict[str, str]:
         for header in headers
         if header.get("name") and header.get("value")
     }
+
+
+def _extract_gmail_body_text(payload: dict) -> str | None:
+    plain_text = _find_gmail_body_by_mime_type(payload, "text/plain")
+    if plain_text:
+        return plain_text
+
+    html_text = _find_gmail_body_by_mime_type(payload, "text/html")
+    if html_text:
+        return _strip_html(html_text)
+
+    return _decode_gmail_body_data(payload.get("body", {}).get("data"))
+
+
+def _find_gmail_body_by_mime_type(payload: dict, mime_type: str) -> str | None:
+    if payload.get("mimeType") == mime_type:
+        decoded = _decode_gmail_body_data(payload.get("body", {}).get("data"))
+        if decoded:
+            return decoded
+
+    for part in payload.get("parts", []):
+        decoded = _find_gmail_body_by_mime_type(part, mime_type)
+        if decoded:
+            return decoded
+
+    return None
+
+
+def _decode_gmail_body_data(body_data: str | None) -> str | None:
+    if not body_data:
+        return None
+
+    padding = "=" * (-len(body_data) % 4)
+    try:
+        decoded_bytes = urlsafe_b64decode(f"{body_data}{padding}")
+    except (ValueError, TypeError):
+        return None
+
+    try:
+        return decoded_bytes.decode("utf-8")
+    except UnicodeDecodeError:
+        return decoded_bytes.decode("latin-1", errors="replace")
+
+
+def _strip_html(html_content: str) -> str:
+    parser = _HTMLTextExtractor()
+    parser.feed(html_content)
+    parser.close()
+    return parser.get_text()
+
+
+class _HTMLTextExtractor(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self._chunks: list[str] = []
+
+    def handle_data(self, data: str) -> None:
+        if data.strip():
+            self._chunks.append(data.strip())
+
+    def get_text(self) -> str:
+        return "\n".join(self._chunks).strip()
 
 
 def _parse_gmail_date_header(date_header: str | None) -> datetime | None:
