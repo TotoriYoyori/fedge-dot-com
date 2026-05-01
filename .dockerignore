@@ -48,8 +48,6 @@ mkdocs.yml
 
 # --- Excluded Modules (Not for deployment)
 src/dummies
-src/google
-src/orders
 
 # --- Files and Databases
 db.sqlite3
