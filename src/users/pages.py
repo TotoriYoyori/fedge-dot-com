@@ -5,11 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.dependencies import valid_cookie_token
 from src.auth.models import User
-from src.auth.redirect import AuthRedirect
 from src.database import get_db
 from src.orders.service import list_persisted_orders
 from src.schemas import RouteDecoratorPreset
-from src.templates import templates
+from src.templates import Redirect, templates
 from src.users.redirect import UserRedirect
 
 # --------------- SSR PAGE ROUTER
@@ -29,7 +28,7 @@ async def dashboard(
     db: AsyncSession = Depends(get_db),
 ):
     if not current_user:
-        return AuthRedirect.to_home()
+        return Redirect.to_home()
 
     if current_user.id != user_id and current_user.role != 'admin':
         return UserRedirect.to_dashboard(current_user.id)

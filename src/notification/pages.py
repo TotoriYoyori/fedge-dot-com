@@ -5,11 +5,10 @@ from pydantic import ValidationError
 
 from src.auth.dependencies import require_role, valid_cookie_token
 from src.auth.models import User
-from src.auth.redirect import AuthRedirect
 from src.notification.schemas import SendContext
 from src.notification.service import EmailService
 from src.schemas import RouteDecoratorPreset
-from src.templates import templates
+from src.templates import Redirect, templates
 
 # --------------- SSR PAGE ROUTER
 page = APIRouter(prefix="/notification", tags=["ssr"])
@@ -26,11 +25,11 @@ async def send_notification_page(
     current_user: Annotated[Optional[User], Depends(valid_cookie_token)],
 ):
     if not current_user:
-        return AuthRedirect.to_home()
+        return Redirect.to_home()
 
     # Check for merchant/admin role for SSR as well
     if current_user.role not in ("merchant", "admin"):
-        return AuthRedirect.to_home()
+        return Redirect.to_home()
 
     return templates.TemplateResponse(
         request=request,

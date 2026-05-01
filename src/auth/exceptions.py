@@ -1,8 +1,8 @@
 from fastapi import Request, status
 from fastapi.responses import JSONResponse
 
-from src.auth.redirect import AuthRedirect
 from src.exceptions import BaseExceptionHandler
+from src.templates import Redirect
 
 
 # --------------- DOMAIN-SPECIFIC EXCEPTIONS
@@ -42,7 +42,7 @@ class AuthExceptionHandler(BaseExceptionHandler):
             if self._is_browser_request(request):
                 return self._render_error(
                     request,
-                    AuthRedirect.REGISTER_PAGE,
+                    Redirect.AUTH_REGISTER,
                     "Please provide a valid username, email, and password.",
                     status.HTTP_400_BAD_REQUEST,
                 )
@@ -58,7 +58,7 @@ class AuthExceptionHandler(BaseExceptionHandler):
             if self._is_browser_request(request):
                 return self._render_error(
                     request,
-                    AuthRedirect.REGISTER_PAGE,
+                    Redirect.AUTH_REGISTER,
                     "Username already taken, please choose another one.",
                     status.HTTP_409_CONFLICT,
                 )
@@ -74,7 +74,7 @@ class AuthExceptionHandler(BaseExceptionHandler):
             if self._is_browser_request(request):
                 return self._render_error(
                     request,
-                    AuthRedirect.LOGIN_PAGE,
+                    Redirect.AUTH_LOGIN,
                     "Invalid username or password.",
                     status.HTTP_401_UNAUTHORIZED,
                 )
@@ -87,7 +87,7 @@ class AuthExceptionHandler(BaseExceptionHandler):
         @self.app.exception_handler(MalformedToken)
         async def malformed_token_handler(request: Request, _exc: MalformedToken):
             if self._is_browser_request(request):
-                return AuthRedirect.to_home()
+                return Redirect.to_home()
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={
@@ -99,7 +99,7 @@ class AuthExceptionHandler(BaseExceptionHandler):
         @self.app.exception_handler(UserNotFound)
         async def user_not_found_handler(request: Request, _exc: UserNotFound):
             if self._is_browser_request(request):
-                return AuthRedirect.to_home()
+                return Redirect.to_home()
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
                 content={"detail": "User not found."},
@@ -110,7 +110,7 @@ class AuthExceptionHandler(BaseExceptionHandler):
             request: Request, _exc: AlreadyAuthenticated
         ):
             if self._is_browser_request(request):
-                return AuthRedirect.to_home()
+                return Redirect.to_home()
             return JSONResponse(
                 status_code=status.HTTP_403_FORBIDDEN,
                 content={"detail": "Already authenticated."},
@@ -121,7 +121,7 @@ class AuthExceptionHandler(BaseExceptionHandler):
             request: Request, _exc: InsufficientPermission
         ):
             if self._is_browser_request(request):
-                return AuthRedirect.to_home()
+                return Redirect.to_home()
             return JSONResponse(
                 status_code=status.HTTP_403_FORBIDDEN,
                 content={"detail": "Insufficient permissions"},

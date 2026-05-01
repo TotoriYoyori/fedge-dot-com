@@ -10,12 +10,16 @@ from src.auth.dependencies import (
 )
 from src.auth.exceptions import InvalidFormData, UsernameAlreadyExists
 from src.auth.models import User
-from src.auth.redirect import AuthRedirect
+from src.auth.redirect import (
+    create_cookie,
+    logout as logout_redirect,
+    redirect_authenticated_user,
+)
 from src.auth.schemas import AuthCreate
-from src.auth.service import AuthService
+from src.auth.service import create_user, get_user_by
 from src.database import get_db
 from src.schemas import RouteDecoratorPreset
-from src.templates import templates
+from src.templates import Redirect, templates
 
 # --------------- SSR PAGE ROUTER
 page = APIRouter(tags=["ssr"])
@@ -29,14 +33,11 @@ page = APIRouter(tags=["ssr"])
 )
 async def register_page(
     request: Request,
-    current_user: Annotated[User | None, Depends(valid_cookie_token)],
+    _to_home_if_authenticated: Annotated[None, Depends(redirect_authenticated_user)],
 ):
-    if current_user:
-        return AuthRedirect.to_home()
-
     return templates.TemplateResponse(
         request=request,
-        name=AuthRedirect.REGISTER_PAGE,
+        name=Redirect.AUTH_REGISTER,
         context={},
     )
 
@@ -50,11 +51,8 @@ async def register_page(
 async def register_submit(
     request: Request,
     db: Annotated[AsyncSession, Depends(get_db)],
-    current_user: Annotated[User | None, Depends(valid_cookie_token)],
+    _to_home_if_authenticated: Annotated[None, Depends(redirect_authenticated_user)],
 ):
-    if current_user:
-        return AuthRedirect.to_home()
-
     form = await request.form()
     form_data = dict(form)
     try:
@@ -62,13 +60,13 @@ async def register_submit(
     except ValidationError:
         raise InvalidFormData
 
-    existing_user = await AuthService.get_one_by("username", auth_create.username, db)
+    existing_user = await get_user_by("username", auth_create.username, db)
     if existing_user:
         raise UsernameAlreadyExists
 
-    created_user = await AuthService.create(auth_create, db)
+    created_user = await create_user(auth_create, db)
 
-    return AuthRedirect.create_cookie(created_user, redirect_url=f"/users/{created_user.id}/dashboard")
+    return create_cookie(created_user, redirect_url=f"/users/{created_user.id}/dashboard")
 
 
 @page.get(
@@ -82,11 +80,11 @@ async def login_page(
     current_user: Annotated[User | None, Depends(valid_cookie_token)],
 ):
     if current_user:
-        return AuthRedirect.to_home()
+        return Redirect.to_home()
 
     return templates.TemplateResponse(
         request=request,
-        name=AuthRedirect.LOGIN_PAGE,
+        name=Redirect.AUTH_LOGIN,
         context={},
     )
 
@@ -103,9 +101,9 @@ async def login_submit(
     valid_user: Annotated[User, Depends(valid_login_credentials)],
 ):
     if current_user:
-        return AuthRedirect.to_home()
+        return Redirect.to_home()
 
-    return AuthRedirect.create_cookie(valid_user, redirect_url=f"/users/{valid_user.id}/dashboard")
+    return create_cookie(valid_user, redirect_url=f"/users/{valid_user.id}/dashboard")
 
 
 @page.post(
@@ -115,4 +113,4 @@ async def login_submit(
     **RouteDecoratorPreset.html_post(),
 )
 async def logout():
-    return AuthRedirect.logout()
+    return logout_redirect()

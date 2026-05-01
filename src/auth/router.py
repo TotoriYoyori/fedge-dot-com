@@ -11,8 +11,7 @@ from src.auth.dependencies import (
 )
 from src.auth.models import User
 from src.auth.schemas import AuthCreate, AuthResponse, Token, UserPrivate
-from src.auth.security import AuthSecurity
-from src.auth.service import AuthService
+from src.auth.service import create_user, create_access_token
 from src.database import get_db
 
 # --------------- API AUTHENTICATION ROUTER
@@ -42,7 +41,7 @@ async def register(
     _username_taken: Annotated[bool, Depends(username_already_exists)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
-    return await AuthService.create(auth_create, db)
+    return await create_user(auth_create, db)
 
 
 @router.post(
@@ -64,7 +63,7 @@ async def register(
 async def login(
     valid_user: Annotated[User, Depends(valid_login_credentials)],
 ) -> Token:
-    return AuthSecurity.create_access_token(
+    return create_access_token(
         data={"sub": str(valid_user.id), "role": str(valid_user.role)},
     )
 
@@ -87,7 +86,5 @@ async def login(
         404: {"description": "User not found"},
     },
 )
-async def me(
-    authorized_user: Annotated[User, Depends(valid_access_token)],
-):
+async def me(authorized_user: Annotated[User, Depends(valid_access_token)]):
     return authorized_user
