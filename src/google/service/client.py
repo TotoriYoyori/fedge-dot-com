@@ -1,32 +1,33 @@
-from datetime import datetime
-
 from anyio import to_thread
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 
+from src.auth.models import User
 from src.google.exceptions import ClientSecretNotFound, FaultyFlow, InvalidPKCE
 from src.google.models import GoogleOAuthCredential, GoogleOAuthState
+from src.google.schemas import GoogleOAuth2CredentialCreate, GoogleOAuth2StateCreate
 from src.google.settings import google_settings
-from src.schemas import CustomBaseModel
-
-
-# =============== CLIENT RECORD ===============
-class GoogleOAuthCredentialRecord(CustomBaseModel):
-    app_user_id: str
-    access_token: str | None = None
-    refresh_token: str | None = None
-    token_uri: str
-    client_id: str | None = None
-    client_secret: str | None = None
-    scopes: str
-    expiry: datetime | None = None
-    email_address: str | None = None
 
 
 # =============== FLOW HELPERS ===============
 def _generate_base_flow(state: str | None = None) -> Flow:
+    """Build a Google OAuth flow from the configured client secrets file.
+
+    Args:
+        state: Optional OAuth state to bind to the flow during callback exchange.
+
+    Returns:
+        Flow: Configured Google OAuth flow instance for authorization or token exchange.
+
+    Raises:
+        ClientSecretNotFound: If the configured Google client secrets file does not exist.
+
+    Example:
+        >>> flow = _generate_base_flow()
+        >>> flow.redirect_uri
+    """
     try:
         return Flow.from_client_secrets_file(
             google_settings.GOOGLE_CLIENT_SECRETS_FILE,
@@ -38,7 +39,7 @@ def _generate_base_flow(state: str | None = None) -> Flow:
         raise ClientSecretNotFound
 
 
-def _attach_code_verifier(flow: Flow, code_verifier: str | None) -> Flow:
+def _attach_code_verifier(flow: Flow, code_verifier: str) -> Flow:
     if not code_verifier:
         raise InvalidPKCE
 
@@ -46,8 +47,24 @@ def _attach_code_verifier(flow: Flow, code_verifier: str | None) -> Flow:
     return flow
 
 
-# =============== OAUTH CLIENT ===============
-def init_flow() -> tuple[str, str, str]:
+# =============== FETCH STATE AND CREDENTIALS FROM GOOGLE SERVER ===============
+def fetch_google_oauth_state(valid_user: User) -> GoogleOAuth2StateCreate:
+    """Build and persist an OAuth authorization flow state.
+
+    Args:
+        valid_user: Authenticated application user starting the Google OAuth flow.
+
+    Returns:
+        GoogleOAuth2StateCreate: State payload containing the generated OAuth
+        state, authorization URL, user id, and PKCE code verifier.
+
+    Raises:
+        FaultyFlow: If Google authorization URL generation fails.
+
+    Example:
+        >>> new_state = fetch_google_oauth_state(valid_user)
+        >>> new_state.user_id
+    """
     flow = _generate_base_flow()
 
     try:
@@ -59,13 +76,39 @@ def init_flow() -> tuple[str, str, str]:
     except Exception:
         raise FaultyFlow
     else:
-        return auth_url, state, flow.code_verifier
+        return GoogleOAuth2StateCreate(
+            state=state,
+            auth_url=auth_url,
+            user_id=valid_user.id,
+            code_verifier=flow.code_verifier,
+        )
 
 
-async def pkce_flow(
+async def fetch_google_oauth_credential(
     exchange_code: str,
     oauth_state: GoogleOAuthState,
-) -> Credentials:
+) -> GoogleOAuth2CredentialCreate:
+    """Exchange a Google OAuth callback code for credential data using PKCE.
+
+    Args:
+        exchange_code: Authorization code returned by Google in the callback.
+        oauth_state: Persisted OAuth state record containing the original state
+            value, app user id, and PKCE code verifier.
+
+    Returns:
+        GoogleOAuth2CredentialCreate: Credential payload ready to be inserted or
+        applied to an existing credential row.
+
+    Raises:
+        InvalidPKCE: If the persisted OAuth state does not contain a usable code
+            verifier.
+        FaultyFlow: If Google token exchange fails for any reason.
+
+    Example:
+        >>> async def run_example() -> int:
+        ...     record = await fetch_google_oauth_credential(exchange_code, current_oauth_state)
+        ...     return record.user_id
+    """
     flow = _generate_base_flow(state=oauth_state.state)
     verified_flow = _attach_code_verifier(flow, oauth_state.code_verifier)
 
@@ -74,16 +117,9 @@ async def pkce_flow(
     except Exception:
         raise FaultyFlow
 
-    return verified_flow.credentials
-
-
-def build_app_oauth_credential(
-    credentials: Credentials,
-    app_user_id: str,
-    email_address: str | None = None,
-) -> GoogleOAuthCredentialRecord:
-    return GoogleOAuthCredentialRecord(
-        app_user_id=app_user_id,
+    credentials = verified_flow.credentials
+    return GoogleOAuth2CredentialCreate(
+        user_id=oauth_state.user_id,
         access_token=credentials.token,
         refresh_token=credentials.refresh_token,
         token_uri=credentials.token_uri or "https://oauth2.googleapis.com/token",
@@ -91,7 +127,7 @@ def build_app_oauth_credential(
         client_secret=credentials.client_secret,
         scopes=",".join(credentials.scopes or []),
         expiry=credentials.expiry,
-        email_address=email_address,
+        email_address=None,
     )
 
 

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import Field
 
@@ -6,6 +6,58 @@ from src.schemas import CustomBaseModel
 
 
 # =============== OAUTH SCHEMAS ===============
+class GoogleOAuth2StateCreate(CustomBaseModel):
+    """
+    Schema for the app-side payload used to create a Google OAuth state record.
+
+    Example:
+        >>> {
+        ...     "state": "abc123state",
+        ...     "auth_url": "https://accounts.google.com/o/oauth2/auth?state=abc123state",
+        ...     "user_id": 42,
+        ...     "code_verifier": "pkce-code-verifier-value",
+        ...     "created_time": "2026-05-04T12:45:00Z"
+        ... }
+    """
+
+    state: str
+    auth_url: str
+    user_id: int
+    code_verifier: str
+    created_time: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+class GoogleOAuth2CredentialCreate(CustomBaseModel):
+    """
+    Schema for the app-side payload used to create or update Google OAuth credentials.
+
+    Example:
+        >>> {
+        ...     "user_id": 42,
+        ...     "access_token": "ya29.a0AfH6SMExample",
+        ...     "refresh_token": "1//0gExampleRefreshToken",
+        ...     "token_uri": "https://oauth2.googleapis.com/token",
+        ...     "client_id": "google-client-id.apps.googleusercontent.com",
+        ...     "client_secret": "client-secret-value",
+        ...     "scopes": "openid,email,https://www.googleapis.com/auth/gmail.readonly",
+        ...     "expiry": "2026-05-04T12:30:00Z",
+        ...     "email_address": "merchant@example.com"
+        ... }
+    """
+
+    user_id: int
+    access_token: str
+    refresh_token: str | None = None
+    token_uri: str
+    client_id: str
+    client_secret: str
+    scopes: str
+    expiry: datetime | None = None
+    email_address: str | None = None
+    created_time: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_time: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
 class GoogleOAuth2RedirectResponse(CustomBaseModel):
     """
     Schema for the response returned when starting the Google OAuth2 flow.
@@ -18,7 +70,7 @@ class GoogleOAuth2RedirectResponse(CustomBaseModel):
     """
 
     auth_url: str
-    message: str
+    message: str = "You are being redirected to Google for authorization."
 
 
 class DebugCredentialResponse(CustomBaseModel):
@@ -27,7 +79,7 @@ class DebugCredentialResponse(CustomBaseModel):
 
     Example:
         >>> {
-        ...     "app_user_id": "42",
+        ...     "user_id": 42,
         ...     "token": "ya29.a0AfH6SM...",
         ...     "refresh_token": "1//0gExampleRefreshToken",
         ...     "token_uri": "https://oauth2.googleapis.com/token",
@@ -38,7 +90,7 @@ class DebugCredentialResponse(CustomBaseModel):
         ... }
     """
 
-    app_user_id: str
+    user_id: int
     token: str | None = None
     refresh_token: str | None = None
     token_uri: str | None = None
@@ -54,21 +106,21 @@ class GoogleOAuth2CredentialResponse(CustomBaseModel):
 
     Example:
         >>> {
-        ...     "app_user_id": "42",
+        ...     "user_id": 42,
         ...     "scopes": "openid,email,https://www.googleapis.com/auth/gmail.readonly",
         ...     "expiry": "2026-05-04T12:30:00Z",
         ...     "message": "Successfully connected to Google using OAuth 2.0!"
         ... }
     """
 
-    app_user_id: str
+    user_id: int
     scopes: str
     expiry: datetime | None = None
     message: str = "Successfully connected to Google using OAuth 2.0!"
 
 
 # =============== INBOX SCHEMAS ===============
-class GoogleInboxMessage(CustomBaseModel):
+class GmailMessageResponse(CustomBaseModel):
     """
     Schema for a single Gmail message returned from the inbox listing endpoint.
 
@@ -101,7 +153,7 @@ class GoogleInboxMessage(CustomBaseModel):
     label_ids: list[str] = Field(default_factory=list)
 
 
-class GoogleInboxResponse(CustomBaseModel):
+class GmailInboxResponse(CustomBaseModel):
     """
     Schema for the response returned when listing Gmail inbox messages.
 
@@ -126,5 +178,5 @@ class GoogleInboxResponse(CustomBaseModel):
         ... }
     """
 
-    messages: list[GoogleInboxMessage]
+    messages: list[GmailMessageResponse]
     result_size_estimate: int | None = Field(default=None)

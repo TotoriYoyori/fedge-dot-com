@@ -31,7 +31,7 @@ async def list_benify_orders(
     )
     parsed_orders = _parse_orders_from_inbox(
         messages=inbox_response.get("messages", []),
-        merchant_id=int(record.app_user_id),
+        merchant_id=record.user_id,
     )
 
     return {
@@ -63,7 +63,7 @@ async def fetch_and_persist_benify_orders(
         "persisted_count": persisted_count,
         "debug_message": (
             f"Fetched {len(parsed_orders)} Benify orders and persisted "
-            f"{persisted_count} rows for merchant_id={int(record.app_user_id)}."
+            f"{persisted_count} rows for merchant_id={record.user_id}."
         ),
     }
 

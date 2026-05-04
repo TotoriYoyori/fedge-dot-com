@@ -61,7 +61,7 @@ async def valid_access_token(
     Raises:
         UnauthenticatedUser: If the token is missing.
         MalformedToken: If the token is invalid or malformed.
-        UserNotFound: If no user matches the token existing_record.
+        UserNotFound: If no user matches the token new_credental.
 
     Example:
         >>> async def me(authorized_user: Annotated[User, Depends(valid_access_token)]):

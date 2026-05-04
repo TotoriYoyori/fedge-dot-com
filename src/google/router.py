@@ -15,12 +15,12 @@ from src.google.dependencies import (
 from src.google.models import GoogleOAuthCredential, GoogleOAuthState
 from src.google.service import (
     connect_gmail_service,
-    exchange_code_for_credentials,
     initiate_oauth2,
+    exchange_code_for_credentials,
     list_gmail_inbox,
 )
 from src.google.schemas import (
-    GoogleInboxResponse,
+    GmailInboxResponse,
     GoogleOAuth2CredentialResponse,
     GoogleOAuth2RedirectResponse,
 )
@@ -34,8 +34,8 @@ router = APIRouter(prefix="/api/v1/google", tags=["api-google"])
     "/oauth2",
     summary="Create Google OAuth2 authorization state",
     description=(
-        "Creates a temporary OAuth2 state new_record for the authenticated user and "
-        "returns the Google authorization URL the client should use to redirect "
+        "Creates a temporary OAuth2 state `new_state` for the authenticated user and "
+        "returns the Google authorization URL (`auth_url`) the client should use to redirect "
         "the user."
     ),
     response_model=GoogleOAuth2RedirectResponse,
@@ -106,7 +106,7 @@ async def gmail(
 
 
 # =============== GMAIL ROUTES ===============
-@router.get("/inbox", response_model=GoogleInboxResponse)
+@router.get("/inbox", response_model=GmailInboxResponse)
 async def list_inbox(
     record: Annotated[GoogleOAuthCredential, Depends(valid_google_oauth_credential)],
     max_results: int = Query(default=5, ge=1, le=100),

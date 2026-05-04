@@ -12,7 +12,7 @@ from src.auth.service.security import assign_role, hash_password
 # =============== USER DATA ACCESS SERVICES ===============
 async def create_user(auth_create: AuthCreate, db: AsyncSession) -> User:
     """
-    Create a new user in the database during registration. Returns this same user's new_record as response to confirm.
+    Create a new user in the database during registration. Returns this same user's new_credential as response to confirm.
     """
     role = assign_role(auth_create.role_key)
     new_user = User(
@@ -31,7 +31,7 @@ async def create_user(auth_create: AuthCreate, db: AsyncSession) -> User:
 
 async def get_user_by(attr: str, lookup_val: Any, db: AsyncSession) -> User | None:
     """
-    Retrieve a single user new_record by a specified attribute.
+    Retrieve a single user new_credential by a specified attribute.
     """
     stmt = select(User).where(getattr(User, attr) == lookup_val)
     result = await db.execute(stmt)

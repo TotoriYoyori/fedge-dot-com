@@ -26,7 +26,7 @@ router = APIRouter(
         200: {"description": "Notification email sent successfully"},
         401: {"description": "Authentication credentials were not provided or are invalid"},
         403: {"description": "Authenticated user does not have permission to send notification emails"},
-        422: {"description": "Request existing_record is invalid or email content could not be built"},
+        422: {"description": "Request new_credental is invalid or email content could not be built"},
     },
 )
 async def send_notify_email(

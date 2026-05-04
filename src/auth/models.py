@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import DateTime, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database import Base
 
@@ -17,6 +17,13 @@ class User(Base):
     role: Mapped[str] = mapped_column(String(50), nullable=False, default="user")
     registration_time: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
+    )
+    google_oauth_states: Mapped[list["GoogleOAuthState"]] = relationship(
+        back_populates="user"
+    )
+    google_oauth_credential: Mapped["GoogleOAuthCredential | None"] = relationship(
+        back_populates="user",
+        uselist=False,
     )
 
     def __str__(self) -> str:

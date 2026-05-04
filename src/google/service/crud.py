@@ -4,25 +4,16 @@ from google.oauth2.credentials import Credentials
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.auth.models import User
 from src.google.models import GoogleOAuthCredential, GoogleOAuthState
-
-from src.google.service.client import GoogleOAuthCredentialRecord
+from src.google.schemas import GoogleOAuth2CredentialCreate, GoogleOAuth2StateCreate
 
 
 # =============== STATE CRUD ===============
 async def create_state(
     db: AsyncSession,
-    valid_user: User,
-    state: str,
-    code_verifier: str | None,
+    new_state: GoogleOAuth2StateCreate,
 ) -> GoogleOAuthState:
-    new_oauth_state = GoogleOAuthState(
-        state=state,
-        app_user_id=str(valid_user.id),
-        code_verifier=code_verifier,
-        created_time=datetime.now(timezone.utc),
-    )
+    new_oauth_state = GoogleOAuthState(**new_state.model_dump())
     db.add(new_oauth_state)
 
     await db.commit()
@@ -32,70 +23,129 @@ async def create_state(
 
 
 async def get_state(db: AsyncSession, state: str) -> GoogleOAuthState:
-    result = await db.execute(
-        select(GoogleOAuthState).where(GoogleOAuthState.state == state)
+    stmt = select(GoogleOAuthState).where(
+        GoogleOAuthState.state == state
     )
+    result = await db.execute(stmt)
+
     return result.scalar_one_or_none()
 
 
-async def delete_state(db: AsyncSession, oauth_state: GoogleOAuthState) -> None:
+async def delete_state(
+    db: AsyncSession,
+    oauth_state: GoogleOAuthState
+) -> GoogleOAuthState:
     await db.delete(oauth_state)
     await db.commit()
+
+    return oauth_state
 
 
 # =============== CREDENTIAL CRUD ===============
 async def create_oauth_credential(
     db: AsyncSession,
-    new_record: GoogleOAuthCredentialRecord,
-    oauth_state: GoogleOAuthState,
+    new_credential: GoogleOAuth2CredentialCreate,
+    current_oauth_state: GoogleOAuthState,
 ) -> GoogleOAuthCredential:
-    payload_data = new_record.model_dump()
-    now = datetime.now(timezone.utc)
-    new_record = GoogleOAuthCredential(
-        **payload_data,
-        created_time=now,
-        updated_time=now,
-    )
-    db.add(new_record)
-    await db.delete(oauth_state)
+    """Create and persist a Google OAuth credential, then consume the OAuth state.
+
+    Args:
+        db: Active async database session used for the credential insert.
+        new_credential: Credential payload produced from the OAuth code exchange.
+        current_oauth_state: Persisted OAuth state record that will be deleted as part of
+            the same transaction after the credential is stored.
+
+    Returns:
+        GoogleOAuthCredential: Newly persisted Google OAuth credential record.
+
+    Example:
+        >>> async def run_example() -> int:
+        ...     record = await create_oauth_credential(db, new_credential, current_oauth_state)
+        ...     return record.user_id
+    """
+    new_credential = GoogleOAuthCredential(**new_credential.model_dump())
+
+    db.add(new_credential)
+
+    await db.delete(current_oauth_state)
 
     await db.commit()
-    await db.refresh(new_record)
+    await db.refresh(new_credential)
 
-    return new_record
+    return new_credential
 
 
 async def update_oauth_credential(
     db: AsyncSession,
-    new_record: GoogleOAuthCredential,
-    existing_record: GoogleOAuthCredentialRecord,
-    oauth_state: GoogleOAuthState,
+    current_credential: GoogleOAuthCredential,
+    new_credential: GoogleOAuth2CredentialCreate,
+    current_oauth_state: GoogleOAuthState,
 ) -> GoogleOAuthCredential:
-    payload_data = existing_record.model_dump()
+    """Update a stored Google OAuth credential and consume the OAuth state.
+
+    Args:
+        db: Active async database session used for the credential update.
+        current_credential: Existing persisted credential record to update in
+            place.
+        new_credential: Fresh credential payload produced from the latest OAuth
+            code exchange.
+        current_oauth_state: Persisted OAuth state record that will be deleted as part of
+            the same transaction after the credential update is committed.
+
+    Returns:
+        GoogleOAuthCredential: Updated Google OAuth credential record.
+
+    Example:
+        >>> async def run_example() -> int:
+        ...     record = await update_oauth_credential(
+        ...         db, persisted_record, exchanged_record, current_oauth_state
+        ...     )
+        ...     return record.user_id
+    """
+    payload_data = new_credential.model_dump(
+        exclude={"created_time", "updated_time"}
+    )
     payload_data["refresh_token"] = (
-        existing_record.refresh_token or new_record.refresh_token
+        new_credential.refresh_token or current_credential.refresh_token
     )
+
     for field_name, field_value in payload_data.items():
-        setattr(new_record, field_name, field_value)
+        setattr(current_credential, field_name, field_value)
 
-    new_record.updated_time = datetime.now(timezone.utc)
+    current_credential.updated_time = new_credential.updated_time
 
-    await db.delete(oauth_state)
+    await db.delete(current_oauth_state)
+
     await db.commit()
-    await db.refresh(new_record)
+    await db.refresh(current_credential)
 
-    return new_record
+    return current_credential
 
 
-async def get_credential(
+async def get_oauth_credential(
     db: AsyncSession,
-    app_user_id: str,
+    user_id: int,
 ) -> GoogleOAuthCredential | None:
-    result = await db.execute(
-        select(GoogleOAuthCredential).where(
-            GoogleOAuthCredential.app_user_id == app_user_id
-        )
+    """Get the stored Google OAuth credential for a user from the app db.
+
+    Args:
+        db: Active async database session used to query the credential table.
+        user_id: Application user identifier associated with the credential.
+
+    Returns:
+        GoogleOAuthCredential | None: Persisted credential record for the user, or
+        ``None`` when no record exists.
+
+    Example:
+        >>> async def run_example() -> bool:
+        ...     record = await get_oauth_credential(db, 42)
+        ...     return record is not None
+    """
+    stmt = select(GoogleOAuthCredential).where(
+        GoogleOAuthCredential.user_id == user_id
     )
+    result = await db.execute(stmt)
+
     return result.scalar_one_or_none()
 
 
@@ -120,7 +170,7 @@ async def upsert_credential(
 
     return record
 
-
+# =============== EMAIL SERVICE CRUD ===============
 async def sync_gmail_profile(
     db: AsyncSession,
     record: GoogleOAuthCredential,
