@@ -14,7 +14,7 @@ from src.auth.schemas import AuthCreate, AuthResponse, Token, UserPrivate
 from src.auth.service import create_user, create_access_token
 from src.database import get_db
 
-# --------------- API AUTHENTICATION ROUTER
+# =============== API AUTHENTICATION ROUTER ===============
 router = APIRouter(prefix="/api/v1/auth", tags=["api-auth"])
 
 

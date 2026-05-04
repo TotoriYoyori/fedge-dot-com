@@ -8,13 +8,13 @@ from pwdlib import PasswordHash
 from src.auth.schemas import Token
 from src.auth.settings import auth_settings
 
-# --------------- SECURITY PRIMITIVES
+# =============== SECURITY PRIMITIVES ===============
 password_hash = PasswordHash.recommended()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 
-# --------------- JWT AND CRYPTOGRAPHY SERVICES
+# =============== JWT AND CRYPTOGRAPHY SERVICES ===============
 def hash_password(password: str) -> str:
     return password_hash.hash(password)
 

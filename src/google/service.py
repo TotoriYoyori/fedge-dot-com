@@ -31,7 +31,7 @@ async def initiate_oauth2(db: AsyncSession, valid_user: User) -> GoogleOAuth2Red
 
     Example:
         >>> async def run_example() -> str:
-        ...     response = await initiate_oauth2(db, valid_user)
+        ...     response = await initiate_oauth2(db, valid_login_user)
         ...     return response.auth_url
     """
     auth_url, state, code_verifier = GoogleOAuthSecurity.init_flow()

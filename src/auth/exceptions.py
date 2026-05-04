@@ -5,7 +5,7 @@ from src.exceptions import BaseExceptionHandler
 from src.templates import Redirect
 
 
-# --------------- DOMAIN-SPECIFIC EXCEPTIONS
+# =============== DOMAIN-SPECIFIC EXCEPTIONS ===============
 class UsernameAlreadyExists(Exception):
     pass
 
@@ -34,8 +34,9 @@ class InsufficientPermission(Exception):
     pass
 
 
-# --------------- FASTAPI EXCEPTION HANDLERS
+# =============== FASTAPI EXCEPTION HANDLERS ===============
 class AuthExceptionHandler(BaseExceptionHandler):
+
     def register_exception_handlers(self) -> None:
         @self.app.exception_handler(InvalidFormData)
         async def invalid_form_data_handler(request: Request, _exc: InvalidFormData):

@@ -5,7 +5,7 @@ from pydantic import BaseModel, EmailStr, Field
 from src.schemas import CustomBaseModel
 
 
-# --------------- AUTH DOMAIN SCHEMAS
+# =============== AUTH DOMAIN SCHEMAS ===============
 class Token(BaseModel):
     """
     Schema for a JWT access token.

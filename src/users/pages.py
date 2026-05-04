@@ -3,8 +3,8 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.auth.dependencies import valid_cookie_token
 from src.auth.models import User
+from src.auth.redirect import valid_cookie_token
 from src.database import get_db
 from src.orders.service import list_persisted_orders
 from src.schemas import RouteDecoratorPreset

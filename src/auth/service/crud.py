@@ -9,7 +9,7 @@ from src.auth.schemas import AuthCreate
 from src.auth.service.security import assign_role, hash_password
 
 
-# --------------- USER DATA ACCESS SERVICES
+# =============== USER DATA ACCESS SERVICES ===============
 async def create_user(auth_create: AuthCreate, db: AsyncSession) -> User:
     """
     Create a new user in the database during registration. Returns this same user's new_record as response to confirm.

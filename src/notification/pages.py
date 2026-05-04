@@ -3,8 +3,9 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, Request
 from pydantic import ValidationError
 
-from src.auth.dependencies import require_role, valid_cookie_token
+from src.auth.dependencies import require_role
 from src.auth.models import User
+from src.auth.redirect import valid_cookie_token
 from src.notification.schemas import SendContext
 from src.notification.service import EmailService
 from src.schemas import RouteDecoratorPreset

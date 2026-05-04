@@ -3,8 +3,8 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Depends
 from fastapi.requests import Request
 
-from src.auth.dependencies import valid_cookie_token
 from src.auth.models import User
+from src.auth.redirect import valid_cookie_token
 from src.landing.redirect import LandingRedirect
 from src.schemas import RouteDecoratorPreset
 from src.templates import templates

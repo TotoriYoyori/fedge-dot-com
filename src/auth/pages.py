@@ -1,27 +1,25 @@
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, Request
-from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.dependencies import (
-    valid_cookie_token,
     valid_login_credentials,
 )
-from src.auth.exceptions import InvalidFormData, UsernameAlreadyExists
 from src.auth.models import User
 from src.auth.redirect import (
-    create_cookie,
-    logout as logout_redirect,
+    redirect_with_cookie,
+    redirect_remove_cookie,
+    no_duplicate_user_record,
     redirect_authenticated_user,
 )
 from src.auth.schemas import AuthCreate
-from src.auth.service import create_user, get_user_by
+from src.auth.service import create_user
 from src.database import get_db
 from src.schemas import RouteDecoratorPreset
 from src.templates import Redirect, templates
 
-# --------------- SSR PAGE ROUTER
+# =============== SSR PAGE ROUTER ===============
 page = APIRouter(tags=["ssr"])
 
 
@@ -49,24 +47,16 @@ async def register_page(
     **RouteDecoratorPreset.html_post(),
 )
 async def register_submit(
-    request: Request,
     db: Annotated[AsyncSession, Depends(get_db)],
     _to_home_if_authenticated: Annotated[None, Depends(redirect_authenticated_user)],
+    valid_create_schema: Annotated[AuthCreate, Depends(no_duplicate_user_record)],
 ):
-    form = await request.form()
-    form_data = dict(form)
-    try:
-        auth_create = AuthCreate.model_validate(form_data)
-    except ValidationError:
-        raise InvalidFormData
+    new_user = await create_user(valid_create_schema, db)
 
-    existing_user = await get_user_by("username", auth_create.username, db)
-    if existing_user:
-        raise UsernameAlreadyExists
-
-    created_user = await create_user(auth_create, db)
-
-    return create_cookie(created_user, redirect_url=f"/users/{created_user.id}/dashboard")
+    return redirect_with_cookie(
+        new_user,
+        redirect_url=f"/users/{new_user.id}/dashboard"
+    )
 
 
 @page.get(
@@ -77,11 +67,8 @@ async def register_submit(
 )
 async def login_page(
     request: Request,
-    current_user: Annotated[User | None, Depends(valid_cookie_token)],
+    _to_home_if_authenticated: Annotated[None, Depends(redirect_authenticated_user)],
 ):
-    if current_user:
-        return Redirect.to_home()
-
     return templates.TemplateResponse(
         request=request,
         name=Redirect.AUTH_LOGIN,
@@ -96,14 +83,13 @@ async def login_page(
     **RouteDecoratorPreset.html_post(),
 )
 async def login_submit(
-    _request: Request,
-    current_user: Annotated[User | None, Depends(valid_cookie_token)],
-    valid_user: Annotated[User, Depends(valid_login_credentials)],
+    _to_home_if_authenticated: Annotated[None, Depends(redirect_authenticated_user)],
+    valid_login_user: Annotated[User, Depends(valid_login_credentials)],
 ):
-    if current_user:
-        return Redirect.to_home()
-
-    return create_cookie(valid_user, redirect_url=f"/users/{valid_user.id}/dashboard")
+    return redirect_with_cookie(
+        valid_login_user,
+        redirect_url=f"/users/{valid_login_user.id}/dashboard"
+    )
 
 
 @page.post(
@@ -113,4 +99,4 @@ async def login_submit(
     **RouteDecoratorPreset.html_post(),
 )
 async def logout():
-    return logout_redirect()
+    return redirect_remove_cookie()
