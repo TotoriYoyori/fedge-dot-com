@@ -12,11 +12,12 @@ from src.google.exceptions import (
     StateNotFound,
 )
 from src.google.models import GoogleOAuthCredential, GoogleOAuthState
-from src.google.service import GoogleOAuthService
+from src.google.service import get_credential, get_state
 
 
+# =============== CALLBACK CHECKS ===============
 def valid_google_oauth2_exchange_code(
-    exchange_code_query: Annotated[str | None, Query(alias="code")] = None
+    exchange_code_query: Annotated[str | None, Query(alias="code")] = None,
 ) -> str:
     if not exchange_code_query:
         raise ExchangeCodeNotFound
@@ -26,23 +27,24 @@ def valid_google_oauth2_exchange_code(
 
 async def valid_google_oauth2_state(
     db: Annotated[AsyncSession, Depends(get_db)],
-    state_query: Annotated[str | None, Query(alias="state")] = None
+    state_query: Annotated[str | None, Query(alias="state")] = None,
 ) -> GoogleOAuthState:
     if not state_query:
         raise StateNotFound
 
-    oauth_state = await GoogleOAuthService.get_state(db, state_query)
+    oauth_state = await get_state(db, state_query)
     if oauth_state is None:
         raise StateNotFound
 
     return oauth_state
 
 
+# =============== CREDENTIAL CHECKS ===============
 async def valid_google_oauth_credential(
     valid_user: Annotated[User, Depends(require_role("merchant", "admin"))],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> GoogleOAuthCredential:
-    record = await GoogleOAuthService.get_credential(db, str(valid_user.id))
+    record = await get_credential(db, str(valid_user.id))
     if record is None:
         raise CredentialNotFound
 

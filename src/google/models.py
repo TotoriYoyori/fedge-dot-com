@@ -6,6 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from src.database import Base
 
 
+# =============== STATE MODEL ===============
 class GoogleOAuthState(Base):
     __tablename__ = "google_oauth_states"
 
@@ -20,6 +21,7 @@ class GoogleOAuthState(Base):
     )
 
 
+# =============== CREDENTIAL MODEL ===============
 class GoogleOAuthCredential(Base):
     __tablename__ = "google_oauth_credentials"
 

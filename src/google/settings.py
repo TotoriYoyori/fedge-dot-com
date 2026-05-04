@@ -3,7 +3,10 @@ from pathlib import Path
 from src.schemas import DomainSettings
 
 
+# =============== DOMAIN SETTINGS ===============
 class GoogleSettings(DomainSettings):
+    """Domain settings for Google OAuth and Gmail integration."""
+
     # ----- Google OAuth General Settings
     GOOGLE_CLIENT_ID: str
     GOOGLE_CLIENT_SECRET: str
@@ -17,6 +20,11 @@ class GoogleSettings(DomainSettings):
     FLOW_PROMPT: str = "consent"
 
     def model_post_init(self, __context):
+        """
+        Sets `GOOGLE_CLIENT_SECRETS_FILE` to the domain-local `credentials.json` file.
+
+        Callers do not need to supply the path explicitly through environment configuration.
+        """
         super().model_post_init(__context)
         object.__setattr__(
             self,
@@ -25,4 +33,5 @@ class GoogleSettings(DomainSettings):
         )
 
 
+# =============== SHARED SETTINGS ===============
 google_settings = GoogleSettings()

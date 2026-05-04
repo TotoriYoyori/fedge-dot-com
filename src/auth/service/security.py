@@ -46,9 +46,7 @@ def get_access_token_max_age_seconds() -> int:
     return auth_settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
 
 
-def create_access_token(
-    data: dict, expires_delta: timedelta | None = None
-) -> Token:
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> Token:
     """
     Create a JWT access token with an expiration timestamp of type bearer.
     """

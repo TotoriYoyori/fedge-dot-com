@@ -10,23 +10,23 @@ from src.auth.exceptions import (
     UnauthenticatedUser,
     UsernameAlreadyExists,
 )
-from src.auth.redirect import valid_cookie_token
 from src.auth.models import User
+from src.auth.redirect import valid_cookie_token
 from src.auth.schemas import AuthCreate
 from src.auth.service import (
     decode_access_token,
     get_user_by,
     oauth2_scheme,
-    verify_token,
     verify_password,
+    verify_token,
 )
 from src.database import get_db
 
 
 # =============== USER AUTHENTICATION DEPENDENCIES ===============
 async def valid_login_credentials(
-        login_form: Annotated[OAuth2PasswordRequestForm, Depends()],
-        db: Annotated[AsyncSession, Depends(get_db)],
+    login_form: Annotated[OAuth2PasswordRequestForm, Depends()],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
     """
     Validate username and password from an urlencoded form.
@@ -43,17 +43,15 @@ async def valid_login_credentials(
         >>>    return valid_login_user
     """
     user = await get_user_by("username", login_form.username, db)
-    if not user or not verify_password(
-            login_form.password, user.password_hash
-    ):
+    if not user or not verify_password(login_form.password, user.password_hash):
         raise UnauthenticatedUser
 
     return user
 
 
 async def valid_access_token(
-        token: Annotated[str | None, Depends(oauth2_scheme)],
-        db: Annotated[AsyncSession, Depends(get_db)],
+    token: Annotated[str | None, Depends(oauth2_scheme)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
     """
     Validate a JWT access token embedded in Headers from request.
@@ -94,9 +92,7 @@ def require_role(*roles: str, use_cookie: bool = False) -> Callable:
         >>>     send_context: SendContext
         >>> ) -> None:
     """
-    check_cookie_or_token = (
-        valid_cookie_token if use_cookie else valid_access_token
-    )
+    check_cookie_or_token = valid_cookie_token if use_cookie else valid_access_token
 
     async def checker(user: Annotated[User, Depends(check_cookie_or_token)]) -> User:
         if user.role not in roles:
@@ -108,7 +104,7 @@ def require_role(*roles: str, use_cookie: bool = False) -> Callable:
 
 # =============== AUTHENTICATION STATUS CHECKS ===============
 async def not_currently_logged_in(
-        token: Annotated[str | None, Depends(oauth2_scheme)],
+    token: Annotated[str | None, Depends(oauth2_scheme)],
 ) -> bool | None:
     """
     Prevent authenticated users from accessing public auth routes (e.g., login, register).
@@ -129,8 +125,8 @@ async def not_currently_logged_in(
 
 
 async def username_already_exists(
-        auth_create: AuthCreate,
-        db: Annotated[AsyncSession, Depends(get_db)],
+    auth_create: AuthCreate,
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> bool:
     """
     Check if a username already exists during registration by what user inputs during registration.

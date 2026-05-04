@@ -11,7 +11,7 @@ from src.auth.dependencies import (
 )
 from src.auth.models import User
 from src.auth.schemas import AuthCreate, AuthResponse, Token, UserPrivate
-from src.auth.service import create_user, create_access_token
+from src.auth.service import create_access_token, create_user
 from src.database import get_db
 
 # =============== API AUTHENTICATION ROUTER ===============

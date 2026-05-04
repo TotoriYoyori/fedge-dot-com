@@ -8,10 +8,10 @@ from src.auth.dependencies import (
 )
 from src.auth.models import User
 from src.auth.redirect import (
-    redirect_with_cookie,
-    redirect_remove_cookie,
     no_duplicate_user_record,
     redirect_authenticated_user,
+    redirect_remove_cookie,
+    redirect_with_cookie,
 )
 from src.auth.schemas import AuthCreate
 from src.auth.service import create_user
@@ -54,8 +54,7 @@ async def register_submit(
     new_user = await create_user(valid_create_schema, db)
 
     return redirect_with_cookie(
-        new_user,
-        redirect_url=f"/users/{new_user.id}/dashboard"
+        new_user, redirect_url=f"/users/{new_user.id}/dashboard"
     )
 
 
@@ -87,8 +86,7 @@ async def login_submit(
     valid_login_user: Annotated[User, Depends(valid_login_credentials)],
 ):
     return redirect_with_cookie(
-        valid_login_user,
-        redirect_url=f"/users/{valid_login_user.id}/dashboard"
+        valid_login_user, redirect_url=f"/users/{valid_login_user.id}/dashboard"
     )
 
 

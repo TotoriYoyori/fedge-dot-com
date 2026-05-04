@@ -1,7 +1,6 @@
 from typing import Annotated
 
-from fastapi import Cookie, Depends, status
-from fastapi import Request
+from fastapi import Cookie, Depends, Request, status
 from fastapi.responses import RedirectResponse
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession

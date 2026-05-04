@@ -8,25 +8,25 @@ from src.auth.dependencies import require_role
 from src.auth.models import User
 from src.database import get_db
 from src.google.dependencies import (
-    valid_google_oauth_credential,
     valid_google_oauth2_exchange_code,
     valid_google_oauth2_state,
+    valid_google_oauth_credential,
 )
 from src.google.models import GoogleOAuthCredential, GoogleOAuthState
-from src.google.schemas import (
-    GoogleOAuth2CredentialResponse,
-    GoogleInboxResponse,
-    GoogleOAuth2RedirectResponse,
-)
-
 from src.google.service import (
     connect_gmail_service,
     exchange_code_for_credentials,
     initiate_oauth2,
     list_gmail_inbox,
 )
+from src.google.schemas import (
+    GoogleInboxResponse,
+    GoogleOAuth2CredentialResponse,
+    GoogleOAuth2RedirectResponse,
+)
 
-# --------------- API GOOGLE OAUTH ROUTER
+
+# =============== API ROUTER ===============
 router = APIRouter(prefix="/api/v1/google", tags=["api-google"])
 
 
@@ -105,6 +105,7 @@ async def gmail(
     return await connect_gmail_service(db, record)
 
 
+# =============== GMAIL ROUTES ===============
 @router.get("/inbox", response_model=GoogleInboxResponse)
 async def list_inbox(
     record: Annotated[GoogleOAuthCredential, Depends(valid_google_oauth_credential)],

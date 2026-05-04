@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 from src.exceptions import BaseExceptionHandler
 
 
+# =============== DOMAIN EXCEPTIONS ===============
 class FaultyFlow(Exception):
     pass
 
@@ -32,6 +33,7 @@ class CredentialNotFound(Exception):
     pass
 
 
+# =============== EXCEPTION HANDLERS ===============
 class GoogleExceptionHandler(BaseExceptionHandler):
     def register_exception_handlers(self) -> None:
         @self.app.exception_handler(ClientSecretNotFound)
