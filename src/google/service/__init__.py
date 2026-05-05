@@ -1,5 +1,6 @@
 # =============== PUBLIC EXPORTS ===============
 from src.google.service.crud import get_oauth_credential, get_state
+from src.google.service.client import state_is_expired
 from src.google.service.flow import (
     connect_gmail_service,
     exchange_code_for_credentials,
@@ -14,4 +15,5 @@ __all__ = [
     "get_state",
     "initiate_oauth2",
     "list_gmail_inbox",
+    "state_is_expired",
 ]

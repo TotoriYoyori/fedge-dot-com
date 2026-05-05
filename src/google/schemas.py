@@ -8,7 +8,7 @@ from src.schemas import CustomBaseModel
 # =============== OAUTH SCHEMAS ===============
 class GoogleOAuth2StateCreate(CustomBaseModel):
     """
-    Schema for the app-side payload used to create a Google OAuth state record.
+    Schema for the app-side payload used to create a Google OAuth state user_google_credential.
 
     Example:
         >>> {

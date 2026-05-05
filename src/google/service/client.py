@@ -1,3 +1,6 @@
+from datetime import UTC, datetime, timedelta
+
+import asyncer
 from anyio import to_thread
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -5,27 +8,29 @@ from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 
 from src.auth.models import User
-from src.google.exceptions import ClientSecretNotFound, FaultyFlow, InvalidPKCE
+from src.google.exceptions import (
+    ClientSecretNotFound,
+    FaultyFlow,
+    InvalidPKCE,
+    NotRefreshableCredential,
+)
 from src.google.models import GoogleOAuthCredential, GoogleOAuthState
 from src.google.schemas import GoogleOAuth2CredentialCreate, GoogleOAuth2StateCreate
 from src.google.settings import google_settings
 
 
 # =============== FLOW HELPERS ===============
-def _generate_base_flow(state: str | None = None) -> Flow:
-    """Build a Google OAuth flow from the configured client secrets file.
-
-    Args:
-        state: Optional OAuth state to bind to the flow during callback exchange.
+def _fetch_base_flow() -> Flow:
+    """Build a base Google OAuth flow from the configured client secrets file.
 
     Returns:
-        Flow: Configured Google OAuth flow instance for authorization or token exchange.
+        Flow: Configured Google OAuth flow instance without callback state attached.
 
     Raises:
         ClientSecretNotFound: If the configured Google client secrets file does not exist.
 
     Example:
-        >>> flow = _generate_base_flow()
+        >>> flow = _fetch_base_flow()
         >>> flow.redirect_uri
     """
     try:
@@ -33,21 +38,64 @@ def _generate_base_flow(state: str | None = None) -> Flow:
             google_settings.GOOGLE_CLIENT_SECRETS_FILE,
             scopes=google_settings.GOOGLE_SCOPES.split(","),
             redirect_uri=google_settings.GOOGLE_REDIRECT_URI,
-            state=state,
         )
     except FileNotFoundError:
         raise ClientSecretNotFound
 
 
-def _attach_code_verifier(flow: Flow, code_verifier: str) -> Flow:
+def _attach_pkce(flow: Flow, state: str, code_verifier: str) -> Flow:
+    """Attach OAuth callback state and PKCE verifier to a Google OAuth flow.
+
+    Args:
+        flow: OAuth flow instance that will use the state and verifier during token
+            exchange.
+        state: Persisted OAuth state value that scopes the token exchange.
+        code_verifier: PKCE code verifier previously generated for the flow.
+
+    Returns:
+        Flow: The same OAuth flow instance with its state and code verifier attached.
+
+    Raises:
+        InvalidPKCE: If the provided code verifier is empty or missing.
+
+    Example:
+        >>> sample_flow = _fetch_base_flow()
+        >>> verified_flow = _attach_pkce(sample_flow, "state", "verifier")
+        >>> verified_flow.state
+        >>> verified_flow.code_verifier
+    """
     if not code_verifier:
         raise InvalidPKCE
 
+    flow.state = state
     flow.code_verifier = code_verifier
     return flow
 
 
-# =============== FETCH STATE AND CREDENTIALS FROM GOOGLE SERVER ===============
+def _convert_credential(record: GoogleOAuthCredential) -> Credentials:
+    """Convert an app-layer OAuth credential record into Google credentials.
+
+    Args:
+        record: Persisted application credential record containing Google OAuth fields.
+
+    Returns:
+        Credentials: Google credentials built from the stored application record.
+
+    Example:
+        >>> credentials = _convert_credential(record)
+        >>> credentials.token
+    """
+    return Credentials(
+        token=record.access_token,
+        refresh_token=record.refresh_token,
+        token_uri=record.token_uri,
+        client_id=record.client_id,
+        client_secret=record.client_secret,
+        scopes=record.scopes.split(","),
+    )
+
+
+# =============== FETCH STATE FROM GOOGLE SERVER ===============
 def fetch_google_oauth_state(valid_user: User) -> GoogleOAuth2StateCreate:
     """Build and persist an OAuth authorization flow state.
 
@@ -65,7 +113,7 @@ def fetch_google_oauth_state(valid_user: User) -> GoogleOAuth2StateCreate:
         >>> new_state = fetch_google_oauth_state(valid_user)
         >>> new_state.user_id
     """
-    flow = _generate_base_flow()
+    flow = _fetch_base_flow()
 
     try:
         auth_url, state = flow.authorization_url(
@@ -84,6 +132,14 @@ def fetch_google_oauth_state(valid_user: User) -> GoogleOAuth2StateCreate:
         )
 
 
+def state_is_expired(oauth_state: GoogleOAuthState) -> bool:
+    expires_at = oauth_state.created_time + timedelta(
+        minutes=google_settings.FLOW_STATE_TTL_MINUTES
+    )
+    return expires_at <= datetime.now(UTC)
+
+
+# =============== FETCH CREDENTIALS FROM GOOGLE SERVER ===============
 async def fetch_google_oauth_credential(
     exchange_code: str,
     oauth_state: GoogleOAuthState,
@@ -92,7 +148,7 @@ async def fetch_google_oauth_credential(
 
     Args:
         exchange_code: Authorization code returned by Google in the callback.
-        oauth_state: Persisted OAuth state record containing the original state
+        oauth_state: Persisted OAuth state user_google_credential containing the original state
             value, app user id, and PKCE code verifier.
 
     Returns:
@@ -106,11 +162,11 @@ async def fetch_google_oauth_credential(
 
     Example:
         >>> async def run_example() -> int:
-        ...     record = await fetch_google_oauth_credential(exchange_code, current_oauth_state)
-        ...     return record.user_id
+        ...     user_google_credential = await fetch_google_oauth_credential(exchange_code, current_oauth_state)
+        ...     return user_google_credential.user_id
     """
-    flow = _generate_base_flow(state=oauth_state.state)
-    verified_flow = _attach_code_verifier(flow, oauth_state.code_verifier)
+    flow = _fetch_base_flow()
+    verified_flow = _attach_pkce(flow, oauth_state.state, oauth_state.code_verifier)
 
     try:
         verified_flow.fetch_token(code=exchange_code)
@@ -131,25 +187,46 @@ async def fetch_google_oauth_credential(
     )
 
 
-def build_google_credentials(record: GoogleOAuthCredential) -> Credentials:
-    return Credentials(
-        token=record.access_token,
-        refresh_token=record.refresh_token,
-        token_uri=record.token_uri,
-        client_id=record.client_id,
-        client_secret=record.client_secret,
-        scopes=record.scopes.split(","),
-    )
+async def refresh_google_oauth_credential(credentials: Credentials) -> Credentials:
+    await asyncer.asyncify(credentials.refresh)(Request())
+
+    return credentials
 
 
-async def refresh_credentials(credentials: Credentials) -> Credentials:
-    await to_thread.run_sync(credentials.refresh, Request())
+async def check_google_oauth_credential_expiry(
+    record: GoogleOAuthCredential,
+) -> Credentials:
+    """Build and refresh Google credentials from a stored app credential record.
+
+    Args:
+        record: Persisted application credential record containing Google OAuth fields.
+
+    Returns:
+        Credentials: Google credentials with expiry attached and refreshed when needed.
+
+    Raises:
+        NotRefreshableCredential: If the credential is expired and has no refresh token.
+
+    Example:
+        >>> async def run_example():
+        ...     sample_credentials = await check_google_oauth_credential_expiry(record)
+        ...     return sample_credentials.expiry
+    """
+    credentials = _convert_credential(record)
+    credentials.expiry = record.expiry
+
+    if credentials.expired and not credentials.refresh_token:
+        raise NotRefreshableCredential
+
+    if credentials.expired:
+        await refresh_google_oauth_credential(credentials)
+
     return credentials
 
 
 # =============== GMAIL CLIENT ===============
 def create_gmail_service(record: GoogleOAuthCredential):
-    creds = build_google_credentials(record)
+    creds = _convert_credential(record)
     creds.expiry = record.expiry
     return create_gmail_service_from_credentials(creds)
 

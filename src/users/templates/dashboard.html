@@ -83,6 +83,22 @@
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
+    .status-banner {
+        padding: 0.9rem 1rem;
+        border-radius: 6px;
+        margin-bottom: 1.5rem;
+        font-size: 0.95rem;
+    }
+    .status-banner-success {
+        background: #edf8f0;
+        border: 1px solid #b7e4c7;
+        color: #1f6f43;
+    }
+    .status-banner-error {
+        background: #fff1f2;
+        border: 1px solid #fecdd3;
+        color: #9f1239;
+    }
     .orders-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -253,9 +269,22 @@
         {% endif %}
 
         <div class="orders-section">
+            {% if orders_message %}
+            <div class="status-banner {{ 'status-banner-success' if orders_status == 'success' else 'status-banner-error' }}">
+                {{ orders_message }}
+            </div>
+            {% endif %}
+
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                 <h3 class="section-title" style="margin: 0;">Customer Orders</h3>
-                <a href="{{ url_for('send_notification_page') }}" class="btn-action remind-btn" style="width: auto; text-decoration: none;">Remind All Customers</a>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+                    {% if user.role in ["merchant", "admin"] %}
+                    <form action="{{ request.url_for('dashboard_update_orders', user_id=dashboard_user_id) }}" method="post" style="margin: 0;">
+                        <button type="submit" class="btn-action remind-btn" style="width: auto;">Update Orders</button>
+                    </form>
+                    {% endif %}
+                    <a href="{{ url_for('send_notification_page') }}" class="btn-action remind-btn" style="width: auto; text-decoration: none;">Remind All Customers</a>
+                </div>
             </div>
 
             <div class="orders-grid">

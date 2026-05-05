@@ -13,15 +13,7 @@ class ClientSecretNotFound(Exception):
     pass
 
 
-class MalformedState(Exception):
-    pass
-
-
-class ExchangeCodeNotFound(Exception):
-    pass
-
-
-class StateNotFound(Exception):
+class InvalidGoogleOAuthCallback(Exception):
     pass
 
 
@@ -30,6 +22,10 @@ class InvalidPKCE(Exception):
 
 
 class CredentialNotFound(Exception):
+    pass
+
+
+class NotRefreshableCredential(Exception):
     pass
 
 
@@ -57,27 +53,18 @@ class GoogleExceptionHandler(BaseExceptionHandler):
                 },
             )
 
-        @self.app.exception_handler(MalformedState)
-        async def malformed_state_handler(request: Request, _exc: MalformedState):
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content={"detail": "Malformed Google OAuth callback state."},
-            )
-
-        @self.app.exception_handler(ExchangeCodeNotFound)
-        async def exchange_code_not_found_handler(
-            request: Request, _exc: ExchangeCodeNotFound
+        @self.app.exception_handler(InvalidGoogleOAuthCallback)
+        async def invalid_google_oauth_callback_handler(
+            request: Request, _exc: InvalidGoogleOAuthCallback
         ):
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                content={"detail": "Google OAuth exchange code not found."},
-            )
-
-        @self.app.exception_handler(StateNotFound)
-        async def state_not_found_handler(request: Request, _exc: StateNotFound):
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content={"detail": "Google OAuth state not found."},
+                content={
+                    "detail": (
+                        "Invalid Google OAuth callback. Please restart the Google "
+                        "OAuth flow."
+                    )
+                },
             )
 
         @self.app.exception_handler(InvalidPKCE)
@@ -94,4 +81,18 @@ class GoogleExceptionHandler(BaseExceptionHandler):
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
                 content={"detail": "Google OAuth credential not found for app user."},
+            )
+
+        @self.app.exception_handler(NotRefreshableCredential)
+        async def not_refreshable_credential_handler(
+            request: Request, _exc: NotRefreshableCredential
+        ):
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={
+                    "detail": (
+                        "Google OAuth credential is expired and cannot be refreshed. "
+                        "Please redo the Google OAuth flow to obtain a new credential."
+                    )
+                },
             )

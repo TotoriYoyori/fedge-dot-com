@@ -81,6 +81,29 @@ async def callback(
     return await exchange_code_for_credentials(db, exchange_code, oauth_state)
 
 
+@router.get(
+    "/me",
+    summary="Get the current user's Google OAuth2 credentials",
+    description=(
+        "Validates that the authenticated user has a persisted Google OAuth2 credential "
+        "and returns the current credential record."
+    ),
+    response_model=GoogleOAuth2CredentialResponse,
+    status_code=status.HTTP_200_OK,
+    responses={
+        200: {
+            "model": GoogleOAuth2CredentialResponse,
+            "description": "Successfully validated and returned the user's Google OAuth2 credential",
+        },
+        404: {"description": "Google OAuth credential not found for app user"},
+    },
+)
+async def me(
+    user_google_credential: Annotated[GoogleOAuthCredential, Depends(valid_google_oauth_credential)],
+):
+    return user_google_credential
+
+
 @router.post(
     "/gmail",
     response_model=GoogleOAuth2CredentialResponse,
@@ -99,10 +122,10 @@ async def callback(
     },
 )
 async def gmail(
-    record: Annotated[GoogleOAuthCredential, Depends(valid_google_oauth_credential)],
-    db: AsyncSession = Depends(get_db),
+    user_google_credential: Annotated[GoogleOAuthCredential, Depends(valid_google_oauth_credential)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    return await connect_gmail_service(db, record)
+    return await connect_gmail_service(db, user_google_credential)
 
 
 # =============== GMAIL ROUTES ===============

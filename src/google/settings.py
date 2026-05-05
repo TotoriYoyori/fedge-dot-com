@@ -18,6 +18,7 @@ class GoogleSettings(DomainSettings):
     FLOW_ACCESS_TYPE: str = "offline"
     FLOW_INCLUDE_GRANTED_SCOPES: str = "true"
     FLOW_PROMPT: str = "consent"
+    FLOW_STATE_TTL_MINUTES: int = 10
 
     def model_post_init(self, __context):
         """

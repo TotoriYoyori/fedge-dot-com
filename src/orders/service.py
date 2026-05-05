@@ -94,7 +94,12 @@ def _parse_orders_from_inbox(messages: list[dict], merchant_id: int) -> list[Ord
         if not body:
             continue
 
-        parsed_orders.append(OrdersParser.parse_body(body, merchant_id=merchant_id))
+        try:
+            parsed_orders.append(
+                OrdersParser.parse_body(body, merchant_id=merchant_id)
+            )
+        except ValueError:
+            continue
 
     return parsed_orders
 

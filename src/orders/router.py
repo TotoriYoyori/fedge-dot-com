@@ -19,7 +19,7 @@ router = APIRouter(prefix="/api/v1/orders", tags=["api-orders"])
 @router.post("/", response_model=OrdersFetchResponse)
 async def fetch_orders(
     record: Annotated[GoogleOAuthCredential, Depends(valid_google_oauth_credential)],
-    max_results: int = Query(default=5, ge=1, le=100),
+    max_results: int = Query(default=50, ge=1, le=100),
     label: str | None = Query(default=None),
     after: date | None = Query(default=None),
     before: date | None = Query(default=None),
