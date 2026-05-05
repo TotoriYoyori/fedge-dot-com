@@ -5,7 +5,7 @@ from pydantic import Field
 from src.schemas import CustomBaseModel
 
 
-# =============== OAUTH SCHEMAS ===============
+# =============== APP LAYER CREATION SCHEMA FOR OAUTH STATE AND OAUTH CREDENTIALS ===============
 class GoogleOAuth2StateCreate(CustomBaseModel):
     """
     Schema for the app-side payload used to create a Google OAuth state user_google_credential.
@@ -58,6 +58,7 @@ class GoogleOAuth2CredentialCreate(CustomBaseModel):
     updated_time: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
+# =============== USER FACING RESPONSE SCHEMA ===============
 class GoogleOAuth2RedirectResponse(CustomBaseModel):
     """
     Schema for the response returned when starting the Google OAuth2 flow.

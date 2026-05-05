@@ -7,11 +7,16 @@ from src.auth.dependencies import require_role
 from src.auth.models import User
 from src.database import get_db
 from src.google.exceptions import (
-    CredentialNotFound,
-    InvalidGoogleOAuthCallback,
+    InvalidGoogleOAuthCredential,
+    InvalidGoogleOAuthCallbackState,
 )
 from src.google.models import GoogleOAuthCredential, GoogleOAuthState
-from src.google.service import get_oauth_credential, get_state, state_is_expired
+from src.google.service import (
+    credential_is_stale,
+    get_oauth_credential,
+    get_state,
+    state_is_stale,
+)
 
 
 # =============== CALLBACK CHECKS ===============
@@ -19,7 +24,7 @@ def valid_google_oauth2_exchange_code(
     exchange_code_in_query: Annotated[str | None, Query(alias="code")] = None,
 ) -> str:
     if not exchange_code_in_query:
-        raise InvalidGoogleOAuthCallback
+        raise InvalidGoogleOAuthCallbackState
 
     return exchange_code_in_query
 
@@ -29,14 +34,14 @@ async def valid_google_oauth2_state(
     state_in_query: Annotated[str | None, Query(alias="state")] = None,
 ) -> GoogleOAuthState:
     if not state_in_query:
-        raise InvalidGoogleOAuthCallback
+        raise InvalidGoogleOAuthCallbackState
 
     oauth_state = await get_state(db, state_in_query)
     if oauth_state is None:
-        raise InvalidGoogleOAuthCallback
+        raise InvalidGoogleOAuthCallbackState
 
-    if state_is_expired(oauth_state):
-        raise InvalidGoogleOAuthCallback
+    if state_is_stale(oauth_state):
+        raise InvalidGoogleOAuthCallbackState
 
     return oauth_state
 
@@ -47,6 +52,9 @@ async def valid_google_oauth_credential(
 ) -> GoogleOAuthCredential:
     user_google_credential = await get_oauth_credential(db, valid_user.id)
     if user_google_credential is None:
-        raise CredentialNotFound
+        raise InvalidGoogleOAuthCredential
+
+    if await credential_is_stale(user_google_credential):
+        raise InvalidGoogleOAuthCredential
 
     return user_google_credential

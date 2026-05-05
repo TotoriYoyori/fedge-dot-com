@@ -13,7 +13,7 @@ class ClientSecretNotFound(Exception):
     pass
 
 
-class InvalidGoogleOAuthCallback(Exception):
+class InvalidGoogleOAuthCallbackState(Exception):
     pass
 
 
@@ -21,11 +21,7 @@ class InvalidPKCE(Exception):
     pass
 
 
-class CredentialNotFound(Exception):
-    pass
-
-
-class NotRefreshableCredential(Exception):
+class InvalidGoogleOAuthCredential(Exception):
     pass
 
 
@@ -53,9 +49,9 @@ class GoogleExceptionHandler(BaseExceptionHandler):
                 },
             )
 
-        @self.app.exception_handler(InvalidGoogleOAuthCallback)
-        async def invalid_google_oauth_callback_handler(
-            request: Request, _exc: InvalidGoogleOAuthCallback
+        @self.app.exception_handler(InvalidGoogleOAuthCallbackState)
+        async def invalid_google_oauth_callback_state_handler(
+            request: Request, _exc: InvalidGoogleOAuthCallbackState
         ):
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -74,25 +70,16 @@ class GoogleExceptionHandler(BaseExceptionHandler):
                 content={"detail": "Google OAuth PKCE verifier is invalid."},
             )
 
-        @self.app.exception_handler(CredentialNotFound)
-        async def credential_not_found_handler(
-            request: Request, _exc: CredentialNotFound
-        ):
-            return JSONResponse(
-                status_code=status.HTTP_404_NOT_FOUND,
-                content={"detail": "Google OAuth credential not found for app user."},
-            )
-
-        @self.app.exception_handler(NotRefreshableCredential)
-        async def not_refreshable_credential_handler(
-            request: Request, _exc: NotRefreshableCredential
+        @self.app.exception_handler(InvalidGoogleOAuthCredential)
+        async def invalid_google_oauth_credential_handler(
+            request: Request, _exc: InvalidGoogleOAuthCredential
         ):
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={
                     "detail": (
-                        "Google OAuth credential is expired and cannot be refreshed. "
-                        "Please redo the Google OAuth flow to obtain a new credential."
+                        "Google OAuth credential is invalid. Please redo the Google "
+                        "OAuth flow to obtain a new credential."
                     )
                 },
             )

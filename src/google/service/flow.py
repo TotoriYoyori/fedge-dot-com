@@ -1,20 +1,19 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.models import User
-from src.google.exceptions import NotRefreshableCredential
 from src.google.models import GoogleOAuthCredential, GoogleOAuthState
 
 
 from src.google.service.client import (
-    check_google_oauth_credential_expiry,
     get_authorized_email,
     fetch_google_oauth_state,
     fetch_google_oauth_credential,
+    _convert_credential,
+    refresh_google_oauth_credential,
 )
 from src.google.service.crud import (
     create_or_replace_state,
     create_oauth_credential,
-    delete_oauth_credential,
     get_oauth_credential,
     sync_gmail_profile,
     update_oauth_credential,
@@ -90,7 +89,7 @@ async def connect_gmail_service(
 ) -> GoogleOAuthCredential:
     record = await refresh_credential_if_needed(db, record)
 
-    credentials = await check_google_oauth_credential_expiry(record)
+    credentials = _convert_credential(record)
 
     email_address = await get_authorized_email(credentials)
 
@@ -102,11 +101,9 @@ async def refresh_credential_if_needed(
     db: AsyncSession,
     record: GoogleOAuthCredential,
 ) -> GoogleOAuthCredential:
-    try:
-        creds = await check_google_oauth_credential_expiry(record)
-    except NotRefreshableCredential:
-        await delete_oauth_credential(db, record)
-        raise
+    creds = _convert_credential(record)
+    if creds.expired:
+        await refresh_google_oauth_credential(creds)
 
     if creds.token != record.access_token or creds.expiry != record.expiry:
         await upsert_credential(

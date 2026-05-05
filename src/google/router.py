@@ -86,7 +86,7 @@ async def callback(
     summary="Get the current user's Google OAuth2 credentials",
     description=(
         "Validates that the authenticated user has a persisted Google OAuth2 credential "
-        "and returns the current credential record."
+        "and returns the current credential user_credential."
     ),
     response_model=GoogleOAuth2CredentialResponse,
     status_code=status.HTTP_200_OK,

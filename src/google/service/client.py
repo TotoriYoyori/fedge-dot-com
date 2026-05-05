@@ -12,7 +12,6 @@ from src.google.exceptions import (
     ClientSecretNotFound,
     FaultyFlow,
     InvalidPKCE,
-    NotRefreshableCredential,
 )
 from src.google.models import GoogleOAuthCredential, GoogleOAuthState
 from src.google.schemas import GoogleOAuth2CredentialCreate, GoogleOAuth2StateCreate
@@ -85,7 +84,7 @@ def _convert_credential(record: GoogleOAuthCredential) -> Credentials:
         >>> credentials = _convert_credential(record)
         >>> credentials.token
     """
-    return Credentials(
+    credentials = Credentials(
         token=record.access_token,
         refresh_token=record.refresh_token,
         token_uri=record.token_uri,
@@ -93,6 +92,8 @@ def _convert_credential(record: GoogleOAuthCredential) -> Credentials:
         client_secret=record.client_secret,
         scopes=record.scopes.split(","),
     )
+    credentials.expiry = record.expiry
+    return credentials
 
 
 # =============== FETCH STATE FROM GOOGLE SERVER ===============
@@ -132,7 +133,7 @@ def fetch_google_oauth_state(valid_user: User) -> GoogleOAuth2StateCreate:
         )
 
 
-def state_is_expired(oauth_state: GoogleOAuthState) -> bool:
+def state_is_stale(oauth_state: GoogleOAuthState) -> bool:
     expires_at = oauth_state.created_time + timedelta(
         minutes=google_settings.FLOW_STATE_TTL_MINUTES
     )
@@ -193,41 +194,28 @@ async def refresh_google_oauth_credential(credentials: Credentials) -> Credentia
     return credentials
 
 
-async def check_google_oauth_credential_expiry(
+async def credential_is_stale(
     record: GoogleOAuthCredential,
-) -> Credentials:
-    """Build and refresh Google credentials from a stored app credential record.
+) -> bool:
+    """Return whether a stored Google OAuth credential is expired and not refreshable.
 
     Args:
         record: Persisted application credential record containing Google OAuth fields.
 
     Returns:
-        Credentials: Google credentials with expiry attached and refreshed when needed.
-
-    Raises:
-        NotRefreshableCredential: If the credential is expired and has no refresh token.
+        bool: ``True`` when the credential is expired and has no refresh token.
 
     Example:
-        >>> async def run_example():
-        ...     sample_credentials = await check_google_oauth_credential_expiry(record)
-        ...     return sample_credentials.expiry
+        >>> async def run_example() -> bool:
+        ...     return await credential_is_stale(record)
     """
     credentials = _convert_credential(record)
-    credentials.expiry = record.expiry
-
-    if credentials.expired and not credentials.refresh_token:
-        raise NotRefreshableCredential
-
-    if credentials.expired:
-        await refresh_google_oauth_credential(credentials)
-
-    return credentials
+    return bool(credentials.expired and not credentials.refresh_token)
 
 
 # =============== GMAIL CLIENT ===============
 def create_gmail_service(record: GoogleOAuthCredential):
     creds = _convert_credential(record)
-    creds.expiry = record.expiry
     return create_gmail_service_from_credentials(creds)
 
 
