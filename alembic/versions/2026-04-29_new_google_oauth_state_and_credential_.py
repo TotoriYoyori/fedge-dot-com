@@ -1,4 +1,4 @@
-"""new google oauth state and credential table
+"""new google oauth state and user_google_credential table
 
 Revision ID: e33be3375258
 Revises: 10d13104bba8

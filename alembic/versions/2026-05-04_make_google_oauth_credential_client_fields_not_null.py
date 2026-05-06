@@ -1,4 +1,4 @@
-"""make google oauth credential client fields not null
+"""make google oauth user_google_credential client fields not null
 
 Revision ID: 8c9d2a1b6e54
 Revises: 4f0d7dd8a4c1

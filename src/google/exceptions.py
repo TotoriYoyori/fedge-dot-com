@@ -75,11 +75,11 @@ class GoogleExceptionHandler(BaseExceptionHandler):
             request: Request, _exc: InvalidGoogleOAuthCredential
         ):
             return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=status.HTTP_404_NOT_FOUND,
                 content={
                     "detail": (
-                        "Google OAuth credential is invalid. Please redo the Google "
-                        "OAuth flow to obtain a new credential."
+                        "Google OAuth user_google_credential is invalid. Please redo the Google "
+                        "OAuth flow to obtain a new user_google_credential."
                     )
                 },
             )

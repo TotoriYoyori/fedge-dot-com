@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.google.models import GoogleOAuthCredential
 
-from src.google.service.client import create_gmail_service
+from src.google.service.client import get_gmail_service
 from src.google.service.flow import refresh_credential_if_needed
 
 
@@ -23,7 +23,7 @@ async def list_gmail_inbox(
     before: date | None = None,
 ) -> dict:
     record = await refresh_credential_if_needed(db, record)
-    service = create_gmail_service(record)
+    service = get_gmail_service(record)
     gmail_query = _build_gmail_inbox_query(
         sender=sender,
         label=label,

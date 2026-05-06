@@ -15,6 +15,7 @@ from src.google.service import (
     credential_is_stale,
     get_oauth_credential,
     get_state,
+    refresh_credential_if_needed,
     state_is_stale,
 )
 
@@ -58,3 +59,12 @@ async def valid_google_oauth_credential(
         raise InvalidGoogleOAuthCredential
 
     return user_google_credential
+
+
+async def refreshed_google_oauth_credential(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    user_google_credential: Annotated[
+        GoogleOAuthCredential, Depends(valid_google_oauth_credential)
+    ],
+) -> GoogleOAuthCredential:
+    return await refresh_credential_if_needed(db, user_google_credential)

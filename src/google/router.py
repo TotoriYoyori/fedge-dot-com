@@ -8,6 +8,7 @@ from src.auth.dependencies import require_role
 from src.auth.models import User
 from src.database import get_db
 from src.google.dependencies import (
+    refreshed_google_oauth_credential,
     valid_google_oauth2_exchange_code,
     valid_google_oauth2_state,
     valid_google_oauth_credential,
@@ -85,17 +86,17 @@ async def callback(
     "/me",
     summary="Get the current user's Google OAuth2 credentials",
     description=(
-        "Validates that the authenticated user has a persisted Google OAuth2 credential "
-        "and returns the current credential user_credential."
+        "Validates that the authenticated user has a persisted Google OAuth2 user_google_credential "
+        "and returns the current user_google_credential user_credential."
     ),
     response_model=GoogleOAuth2CredentialResponse,
     status_code=status.HTTP_200_OK,
     responses={
         200: {
             "model": GoogleOAuth2CredentialResponse,
-            "description": "Successfully validated and returned the user's Google OAuth2 credential",
+            "description": "Successfully validated and returned the user's Google OAuth2 user_google_credential",
         },
-        404: {"description": "Google OAuth credential not found for app user"},
+        404: {"description": "Google OAuth user_google_credential not found for app user"},
     },
 )
 async def me(
@@ -118,11 +119,13 @@ async def me(
             "model": GoogleOAuth2CredentialResponse,
             "description": "Successfully synced Google OAuth2 credentials with Gmail",
         },
-        404: {"description": "Google OAuth credential not found for app user"},
+        404: {"description": "Google OAuth user_google_credential not found for app user"},
     },
 )
 async def gmail(
-    user_google_credential: Annotated[GoogleOAuthCredential, Depends(valid_google_oauth_credential)],
+    user_google_credential: Annotated[
+        GoogleOAuthCredential, Depends(refreshed_google_oauth_credential)
+    ],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
     return await connect_gmail_service(db, user_google_credential)

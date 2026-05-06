@@ -76,7 +76,7 @@ class GoogleOAuth2RedirectResponse(CustomBaseModel):
 
 class DebugCredentialResponse(CustomBaseModel):
     """
-    Schema for a debug view of persisted Google OAuth credential data.
+    Schema for a debug view of persisted Google OAuth user_google_credential data.
 
     Example:
         >>> {

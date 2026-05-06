@@ -1,7 +1,6 @@
 from datetime import UTC, datetime, timedelta
 
 import asyncer
-from anyio import to_thread
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
@@ -16,6 +15,16 @@ from src.google.exceptions import (
 from src.google.models import GoogleOAuthCredential, GoogleOAuthState
 from src.google.schemas import GoogleOAuth2CredentialCreate, GoogleOAuth2StateCreate
 from src.google.settings import google_settings
+
+
+def _coerce_utc_datetime(value: datetime | None) -> datetime | None:
+    if value is None:
+        return None
+
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+
+    return value.astimezone(UTC)
 
 
 # =============== FLOW HELPERS ===============
@@ -71,17 +80,19 @@ def _attach_pkce(flow: Flow, state: str, code_verifier: str) -> Flow:
     return flow
 
 
-def _convert_credential(record: GoogleOAuthCredential) -> Credentials:
-    """Convert an app-layer OAuth credential record into Google credentials.
+def _convert_credential(
+    record: GoogleOAuthCredential | GoogleOAuth2CredentialCreate,
+) -> Credentials:
+    """Convert an app-layer OAuth user_google_credential user_google_credential into Google credentials.
 
     Args:
-        record: Persisted application credential record containing Google OAuth fields.
+        record: Persisted application user_google_credential user_google_credential containing Google OAuth fields.
 
     Returns:
-        Credentials: Google credentials built from the stored application record.
+        Credentials: Google credentials built from the stored application user_google_credential.
 
     Example:
-        >>> credentials = _convert_credential(record)
+        >>> credentials = _convert_credential(user_google_credential)
         >>> credentials.token
     """
     credentials = Credentials(
@@ -92,7 +103,7 @@ def _convert_credential(record: GoogleOAuthCredential) -> Credentials:
         client_secret=record.client_secret,
         scopes=record.scopes.split(","),
     )
-    credentials.expiry = record.expiry
+    credentials.expiry = _coerce_utc_datetime(record.expiry)
     return credentials
 
 
@@ -134,7 +145,8 @@ def fetch_google_oauth_state(valid_user: User) -> GoogleOAuth2StateCreate:
 
 
 def state_is_stale(oauth_state: GoogleOAuthState) -> bool:
-    expires_at = oauth_state.created_time + timedelta(
+    created_time = _coerce_utc_datetime(oauth_state.created_time)
+    expires_at = created_time + timedelta(
         minutes=google_settings.FLOW_STATE_TTL_MINUTES
     )
     return expires_at <= datetime.now(UTC)
@@ -145,7 +157,7 @@ async def fetch_google_oauth_credential(
     exchange_code: str,
     oauth_state: GoogleOAuthState,
 ) -> GoogleOAuth2CredentialCreate:
-    """Exchange a Google OAuth callback code for credential data using PKCE.
+    """Exchange a Google OAuth callback code for user_google_credential data using PKCE.
 
     Args:
         exchange_code: Authorization code returned by Google in the callback.
@@ -154,7 +166,7 @@ async def fetch_google_oauth_credential(
 
     Returns:
         GoogleOAuth2CredentialCreate: Credential payload ready to be inserted or
-        applied to an existing credential row.
+        applied to an existing user_google_credential row.
 
     Raises:
         InvalidPKCE: If the persisted OAuth state does not contain a usable code
@@ -188,44 +200,62 @@ async def fetch_google_oauth_credential(
     )
 
 
-async def refresh_google_oauth_credential(credentials: Credentials) -> Credentials:
+async def refresh_google_oauth_credential(
+    user_google_credential: GoogleOAuthCredential,
+) -> GoogleOAuth2CredentialCreate | None:
+    credentials = _convert_credential(user_google_credential)
+    if not credentials.expired:
+        return None
+
     await asyncer.asyncify(credentials.refresh)(Request())
 
-    return credentials
+    if (
+        credentials.token == user_google_credential.access_token
+        and credentials.expiry == user_google_credential.expiry
+    ):
+        return None
+
+    return GoogleOAuth2CredentialCreate(
+        user_id=user_google_credential.user_id,
+        access_token=credentials.token,
+        refresh_token=credentials.refresh_token
+        or user_google_credential.refresh_token,
+        token_uri=credentials.token_uri or user_google_credential.token_uri,
+        client_id=credentials.client_id or user_google_credential.client_id,
+        client_secret=credentials.client_secret
+        or user_google_credential.client_secret,
+        scopes=",".join(credentials.scopes or []) or user_google_credential.scopes,
+        expiry=credentials.expiry,
+        email_address=user_google_credential.email_address,
+    )
 
 
 async def credential_is_stale(
     record: GoogleOAuthCredential,
 ) -> bool:
-    """Return whether a stored Google OAuth credential is expired and not refreshable.
+    """Return whether a stored Google OAuth user_google_credential is expired and not refreshable.
 
     Args:
-        record: Persisted application credential record containing Google OAuth fields.
+        record: Persisted application user_google_credential user_google_credential containing Google OAuth fields.
 
     Returns:
-        bool: ``True`` when the credential is expired and has no refresh token.
+        bool: ``True`` when the user_google_credential is expired and has no refresh token.
 
     Example:
         >>> async def run_example() -> bool:
-        ...     return await credential_is_stale(record)
+        ...     return await credential_is_stale(user_google_credential)
     """
     credentials = _convert_credential(record)
     return bool(credentials.expired and not credentials.refresh_token)
 
 
 # =============== GMAIL CLIENT ===============
-def create_gmail_service(record: GoogleOAuthCredential):
-    creds = _convert_credential(record)
-    return create_gmail_service_from_credentials(creds)
+def get_gmail_service(user_google_credential: GoogleOAuthCredential):
+    creds = _convert_credential(user_google_credential)
 
-
-def create_gmail_service_from_credentials(credentials: Credentials):
-    return build("gmail", "v1", credentials=credentials, cache_discovery=False)
-
-
-async def get_authorized_email(credentials: Credentials) -> str | None:
-    service = create_gmail_service_from_credentials(credentials)
-    profile = await to_thread.run_sync(
-        lambda: service.users().getProfile(userId="me").execute()
+    return build(
+        "gmail",
+        "v1",
+        credentials=creds,
+        cache_discovery=False,
     )
-    return profile.get("emailAddress")

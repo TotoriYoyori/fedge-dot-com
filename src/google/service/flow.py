@@ -5,10 +5,9 @@ from src.google.models import GoogleOAuthCredential, GoogleOAuthState
 
 
 from src.google.service.client import (
-    get_authorized_email,
     fetch_google_oauth_state,
     fetch_google_oauth_credential,
-    _convert_credential,
+    get_gmail_service,
     refresh_google_oauth_credential,
 )
 from src.google.service.crud import (
@@ -19,6 +18,7 @@ from src.google.service.crud import (
     update_oauth_credential,
     upsert_credential,
 )
+from src.google.service.gmail import get_authorized_email
 
 
 # =============== OAUTH2 INITIATE AND EXCHANGE FLOW ===============
@@ -53,17 +53,17 @@ async def exchange_code_for_credentials(
     exchange_code: str,
     oauth_state: GoogleOAuthState,
 ) -> GoogleOAuthCredential:
-    """Exchange a callback code and persist the resulting Google OAuth credential.
+    """Exchange a callback code and persist the resulting Google OAuth user_google_credential.
 
     Args:
-        db: Active async database session used for credential lookup and writes.
+        db: Active async database session used for user_google_credential lookup and writes.
         exchange_code: Authorization code returned by Google in the callback.
         oauth_state: Persisted OAuth state user_google_credential that scopes the exchange. The
             state user_google_credential is consumed by the downstream create or update operation
-            once credential persistence succeeds.
+            once user_google_credential persistence succeeds.
 
     Returns:
-        GoogleOAuthCredential: Persisted Google OAuth credential user_google_credential created
+        GoogleOAuthCredential: Persisted Google OAuth user_google_credential user_google_credential created
         or updated for the user.
 
     Example:
@@ -85,35 +85,33 @@ async def exchange_code_for_credentials(
 # =============== FLOW TO SYNC WITH GOOGLE'S SERVICES ===============
 async def connect_gmail_service(
     db: AsyncSession,
-    record: GoogleOAuthCredential,
+    user_google_credential: GoogleOAuthCredential,
 ) -> GoogleOAuthCredential:
-    record = await refresh_credential_if_needed(db, record)
+    service = get_gmail_service(user_google_credential)
+    email_address = await get_authorized_email(service)
 
-    credentials = _convert_credential(record)
-
-    email_address = await get_authorized_email(credentials)
-
-    return await sync_gmail_profile(db, record, email_address)
+    return await sync_gmail_profile(db, user_google_credential, email_address)
 
 
 # =============== REFRESH FLOW ===============
 async def refresh_credential_if_needed(
     db: AsyncSession,
-    record: GoogleOAuthCredential,
+    user_google_credential: GoogleOAuthCredential,
 ) -> GoogleOAuthCredential:
-    creds = _convert_credential(record)
-    if creds.expired:
-        await refresh_google_oauth_credential(creds)
+    refreshed_credential = await refresh_google_oauth_credential(
+        user_google_credential
+    )
+    if refreshed_credential is None:
+        return user_google_credential
 
-    if creds.token != record.access_token or creds.expiry != record.expiry:
-        await upsert_credential(
-            db=db,
-            record=record,
-            credentials=creds,
-            email_address=record.email_address,
-        )
-        refreshed = await get_oauth_credential(db, record.user_id)
-        if refreshed is not None:
-            return refreshed
+    await upsert_credential(
+        db=db,
+        record=user_google_credential,
+        credentials=refreshed_credential,
+        email_address=user_google_credential.email_address,
+    )
+    refreshed = await get_oauth_credential(db, user_google_credential.user_id)
+    if refreshed is not None:
+        return refreshed
 
-    return record
+    return user_google_credential
