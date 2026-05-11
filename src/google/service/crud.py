@@ -82,7 +82,6 @@ async def create_oauth_credential(
         ...     return user_google_credential.user_id
     """
     new_credential = GoogleOAuthCredential(**new_credential.model_dump())
-
     db.add(new_credential)
 
     await db.delete(current_oauth_state)
@@ -167,6 +166,25 @@ async def get_oauth_credential(
     return result.scalar_one_or_none()
 
 
+async def patch_oauth_credential(
+    db: AsyncSession,
+    current_credential: GoogleOAuthCredential,
+    patch_data: dict[str, object],
+) -> GoogleOAuthCredential:
+    for field_name, field_value in patch_data.items():
+        if field_name == "updated_time":
+            continue
+
+        setattr(current_credential, field_name, field_value)
+
+    current_credential.updated_time = datetime.now(timezone.utc)
+
+    await db.commit()
+    await db.refresh(current_credential)
+
+    return current_credential
+
+
 async def delete_oauth_credential(
     db: AsyncSession,
     user_google_credential: GoogleOAuthCredential,
@@ -177,37 +195,22 @@ async def delete_oauth_credential(
     return user_google_credential
 
 
-async def upsert_credential(
+async def refresh_oauth_access_token(
     db: AsyncSession,
-    record: GoogleOAuthCredential,
-    credentials: GoogleOAuth2CredentialCreate,
-    email_address: str | None = None,
+    current_credential: GoogleOAuthCredential,
+    new_credential: GoogleOAuth2CredentialCreate,
 ) -> GoogleOAuthCredential:
-    record.access_token = credentials.access_token
-    record.refresh_token = credentials.refresh_token or record.refresh_token
-    record.token_uri = credentials.token_uri or record.token_uri
-    record.client_id = credentials.client_id or record.client_id
-    record.client_secret = credentials.client_secret or record.client_secret
-    record.scopes = credentials.scopes or record.scopes
-    record.expiry = credentials.expiry
-    record.email_address = email_address or record.email_address
-    record.updated_time = datetime.now(timezone.utc)
+    for field_name in ("access_token", "expiry"):
+        setattr(current_credential, field_name, getattr(new_credential, field_name))
+
+    for field_name in ("refresh_token", "token_uri", "client_id", "client_secret", "scopes"):
+        field_value = getattr(new_credential, field_name)
+        if field_value:
+            setattr(current_credential, field_name, field_value)
+
+    current_credential.updated_time = datetime.now(timezone.utc)
 
     await db.commit()
-    await db.refresh(record)
+    await db.refresh(current_credential)
 
-    return record
-
-# =============== EMAIL SERVICE CRUD ===============
-async def sync_gmail_profile(
-    db: AsyncSession,
-    record: GoogleOAuthCredential,
-    email_address: str | None,
-) -> GoogleOAuthCredential:
-    record.email_address = email_address or record.email_address
-    record.updated_time = datetime.now(timezone.utc)
-
-    await db.commit()
-    await db.refresh(record)
-
-    return record
+    return current_credential

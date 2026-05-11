@@ -2,12 +2,13 @@ from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
+from googleapiclient.discovery import Resource
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.dependencies import require_role
 from src.auth.models import User
 from src.database import get_db
-from src.google.dependencies import valid_google_oauth_credential
+from src.google.dependencies import valid_gmail_service, valid_google_oauth_credential
 from src.google.models import GoogleOAuthCredential
 from src.orders.schemas import OrdersFetchResponse, OrdersListResponse
 from src.orders.service import fetch_and_persist_benify_orders, list_persisted_orders
@@ -19,6 +20,7 @@ router = APIRouter(prefix="/api/v1/orders", tags=["api-orders"])
 @router.post("/", response_model=OrdersFetchResponse)
 async def fetch_orders(
     record: Annotated[GoogleOAuthCredential, Depends(valid_google_oauth_credential)],
+    gmail_service: Annotated[Resource, Depends(valid_gmail_service)],
     max_results: int = Query(default=50, ge=1, le=100),
     label: str | None = Query(default=None),
     after: date | None = Query(default=None),
@@ -27,7 +29,8 @@ async def fetch_orders(
 ):
     return await fetch_and_persist_benify_orders(
         db=db,
-        record=record,
+        gmail_service=gmail_service,
+        merchant_id=record.user_id,
         max_results=max_results,
         label=label,
         after=after,

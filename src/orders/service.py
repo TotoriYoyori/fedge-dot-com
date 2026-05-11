@@ -1,37 +1,40 @@
 from datetime import date
 
+from googleapiclient.discovery import Resource
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.google.models import GoogleOAuthCredential
-from src.google.service import list_gmail_inbox
+from src.google.schemas import GmailInboxQuery
+from src.google.service import get_gmail_messages
 from src.orders.models import Orders
 from src.orders.parsers import OrdersParser
+from src.schemas import PaginationQuery
 
 
 BENIFY_SENDER = "fps@benify.com"
 
 
 async def list_benify_orders(
-    db: AsyncSession,
-    record: GoogleOAuthCredential,
+    gmail_service: Resource,
+    merchant_id: int,
     max_results: int,
     label: str | None = None,
     after: date | None = None,
     before: date | None = None,
 ) -> dict:
-    inbox_response = await list_gmail_inbox(
-        db=db,
-        record=record,
-        max_results=max_results,
-        sender=BENIFY_SENDER,
-        label=label,
-        after=after,
-        before=before,
+    inbox_response = await get_gmail_messages(
+        service=gmail_service,
+        pagination=PaginationQuery(limit=max_results),
+        query=GmailInboxQuery(
+            from_=BENIFY_SENDER,
+            label=label,
+            after=after,
+            before=before,
+        ),
     )
     parsed_orders = _parse_orders_from_inbox(
         messages=inbox_response.get("messages", []),
-        merchant_id=record.user_id,
+        merchant_id=merchant_id,
     )
 
     return {
@@ -42,15 +45,16 @@ async def list_benify_orders(
 
 async def fetch_and_persist_benify_orders(
     db: AsyncSession,
-    record: GoogleOAuthCredential,
+    gmail_service: Resource,
+    merchant_id: int,
     max_results: int,
     label: str | None = None,
     after: date | None = None,
     before: date | None = None,
 ) -> dict:
     parsed_orders_response = await list_benify_orders(
-        db=db,
-        record=record,
+        gmail_service=gmail_service,
+        merchant_id=merchant_id,
         max_results=max_results,
         label=label,
         after=after,
@@ -63,7 +67,7 @@ async def fetch_and_persist_benify_orders(
         "persisted_count": persisted_count,
         "debug_message": (
             f"Fetched {len(parsed_orders)} Benify orders and persisted "
-            f"{persisted_count} rows for merchant_id={record.user_id}."
+            f"{persisted_count} rows for merchant_id={merchant_id}."
         ),
     }
 

@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import Depends, Query
+from googleapiclient.discovery import Resource
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.dependencies import require_role
@@ -13,10 +14,11 @@ from src.google.exceptions import (
 from src.google.models import GoogleOAuthCredential, GoogleOAuthState
 from src.google.service import (
     credential_is_stale,
+    get_gmail_service,
     get_oauth_credential,
     get_state,
-    refresh_credential_if_needed,
     state_is_stale,
+    sync_access_token,
 )
 
 
@@ -51,6 +53,15 @@ async def valid_google_oauth_credential(
     valid_user: Annotated[User, Depends(require_role("merchant", "admin"))],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> GoogleOAuthCredential:
+    """Return the authenticated user's usable Google OAuth credential.
+
+    Returns:
+        GoogleOAuthCredential: Persisted Google OAuth credential for the user.
+
+    Raises:
+        InvalidGoogleOAuthCredential: If no credential exists or the stored
+            credential is stale.
+    """
     user_google_credential = await get_oauth_credential(db, valid_user.id)
     if user_google_credential is None:
         raise InvalidGoogleOAuthCredential
@@ -61,10 +72,13 @@ async def valid_google_oauth_credential(
     return user_google_credential
 
 
-async def refreshed_google_oauth_credential(
+async def valid_gmail_service(
+    user_google_credential: Annotated[GoogleOAuthCredential, Depends(valid_google_oauth_credential)],
     db: Annotated[AsyncSession, Depends(get_db)],
-    user_google_credential: Annotated[
-        GoogleOAuthCredential, Depends(valid_google_oauth_credential)
-    ],
-) -> GoogleOAuthCredential:
-    return await refresh_credential_if_needed(db, user_google_credential)
+) -> Resource:
+    if user_google_credential.email_address is None:
+        raise InvalidGoogleOAuthCredential
+
+    synced_credential = await sync_access_token(db, user_google_credential)
+
+    return get_gmail_service(synced_credential)

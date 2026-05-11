@@ -53,8 +53,9 @@ credentials.json
 /site
 
 # Custom
-tests/TODO.py
+scraps/TODO.py
 src/dummies
 src/orders/sample
 .junie
 .uv-cache
+/scraps

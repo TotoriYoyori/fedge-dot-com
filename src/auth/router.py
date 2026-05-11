@@ -55,7 +55,7 @@ async def register(
     status_code=status.HTTP_200_OK,
     responses={
         200: {"model": Token, "description": "Successfully logged in"},
-        401: {"description": "Invalid credentials"},
+        401: {"description": "Invalid new_credential"},
         403: {"description": "Already authenticated"},
     },
     dependencies=[Depends(not_currently_logged_in)],

@@ -1,8 +1,9 @@
 from pathlib import Path
+from typing import Annotated
 
-from fastapi import status
+from fastapi import Query, status
 from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pydantic.alias_generators import to_camel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -27,6 +28,12 @@ class CustomBaseModel(BaseModel):
         populate_by_name=True,
         from_attributes=True,
     )
+
+
+# --------------- OFFSET AND LIMIT SHARED QUERY PATTERN
+class PaginationQuery(CustomBaseModel):
+    offset: Annotated[int, Query(ge=0)] = 0
+    limit: Annotated[int, Query(ge=1, le=100)] = 5
 
 
 # --------------- MODULE CONFIGURATION BASE CLASS

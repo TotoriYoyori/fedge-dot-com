@@ -24,7 +24,7 @@ router = APIRouter(
     summary="Send a notification email",
     responses={
         200: {"description": "Notification email sent successfully"},
-        401: {"description": "Authentication credentials were not provided or are invalid"},
+        401: {"description": "Authentication new_credential were not provided or are invalid"},
         403: {"description": "Authenticated user does not have permission to send notification emails"},
         422: {"description": "Request new_credental is invalid or email content could not be built"},
     },

@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.auth.models import User
 from src.auth.redirect import valid_cookie_token
 from src.database import get_db
+from src.google.service import get_gmail_service, sync_access_token
 from src.google.service.crud import get_oauth_credential
 from src.orders.service import fetch_and_persist_benify_orders, list_persisted_orders
 from src.schemas import RouteDecoratorPreset
@@ -72,16 +73,19 @@ async def dashboard_update_orders(
         return UserRedirect.to_dashboard(current_user.id)
 
     record = await get_oauth_credential(db, user_id)
-    if record is None:
+    if record is None or record.email_address is None:
         return _dashboard_redirect(
             user_id=user_id,
             orders_status="error",
             orders_message="Connect Google before updating orders.",
         )
 
+    record = await sync_access_token(db, record)
+    gmail_service = get_gmail_service(record)
     fetch_response = await fetch_and_persist_benify_orders(
         db=db,
-        record=record,
+        gmail_service=gmail_service,
+        merchant_id=record.user_id,
         max_results=100,
     )
     persisted_count = fetch_response["persisted_count"]

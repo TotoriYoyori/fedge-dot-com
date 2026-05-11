@@ -1,30 +1,33 @@
-from datetime import date
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, status
+# FIXME: Codesmell google being imported in router.py
+from googleapiclient.discovery import Resource
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.dependencies import require_role
 from src.auth.models import User
 from src.database import get_db
 from src.google.dependencies import (
-    refreshed_google_oauth_credential,
     valid_google_oauth2_exchange_code,
     valid_google_oauth2_state,
     valid_google_oauth_credential,
+    valid_gmail_service,
 )
 from src.google.models import GoogleOAuthCredential, GoogleOAuthState
 from src.google.service import (
     connect_gmail_service,
     initiate_oauth2,
     exchange_code_for_credentials,
-    list_gmail_inbox,
+    get_gmail_messages,
 )
 from src.google.schemas import (
+    GmailInboxQuery,
     GmailInboxResponse,
     GoogleOAuth2CredentialResponse,
-    GoogleOAuth2RedirectResponse,
+    GoogleOAuth2RedirectResponse, GmailMessageResponse,
 )
+from src.schemas import PaginationQuery
 
 
 # =============== API ROUTER ===============
@@ -62,14 +65,14 @@ async def oauth2(
     summary="Handle Google OAuth2 callback",
     description=(
         "Consumes the Google OAuth2 callback, validates the returned state, "
-        "and exchanges the authorization code for Google OAuth2 credentials."
+        "and exchanges the authorization code for Google OAuth2 new_credential."
     ),
     response_model=GoogleOAuth2CredentialResponse,
     status_code=status.HTTP_200_OK,
     responses={
         200: {
             "model": GoogleOAuth2CredentialResponse,
-            "description": "Successfully exchanged the callback code for credentials",
+            "description": "Successfully exchanged the callback code for new_credential",
         },
         400: {"description": "Malformed callback or invalid state"},
     },
@@ -84,7 +87,7 @@ async def callback(
 
 @router.get(
     "/me",
-    summary="Get the current user's Google OAuth2 credentials",
+    summary="Get the current user's Google OAuth2 new_credential",
     description=(
         "Validates that the authenticated user has a persisted Google OAuth2 user_google_credential "
         "and returns the current user_google_credential user_credential."
@@ -112,42 +115,44 @@ async def me(
     summary="Connect Gmail service",
     description=(
         "Builds the Gmail service and syncs profile data using previously persisted "
-        "Google OAuth2 credentials."
+        "Google OAuth2 new_credential."
     ),
     responses={
         200: {
             "model": GoogleOAuth2CredentialResponse,
-            "description": "Successfully synced Google OAuth2 credentials with Gmail",
+            "description": "Successfully synced Google OAuth2 new_credential with Gmail",
         },
         404: {"description": "Google OAuth user_google_credential not found for app user"},
     },
 )
 async def gmail(
-    user_google_credential: Annotated[
-        GoogleOAuthCredential, Depends(refreshed_google_oauth_credential)
-    ],
+    user_google_credential: Annotated[GoogleOAuthCredential, Depends(valid_google_oauth_credential)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
     return await connect_gmail_service(db, user_google_credential)
 
 
 # =============== GMAIL ROUTES ===============
-@router.get("/inbox", response_model=GmailInboxResponse)
-async def list_inbox(
-    record: Annotated[GoogleOAuthCredential, Depends(valid_google_oauth_credential)],
-    max_results: int = Query(default=5, ge=1, le=100),
-    sender: str | None = Query(default=None),
-    label: str | None = Query(default=None),
-    after: date | None = Query(default=None),
-    before: date | None = Query(default=None),
-    db: AsyncSession = Depends(get_db),
+@router.get(
+    "/inbox",
+    response_model=GmailInboxResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Fetch Gmail inbox messages",
+    description=(
+        "Fetches the user's Gmail inbox messages using the provided Gmail service. "
+        "Supports pagination and filtering by query parameters."
+    ),
+    responses={
+        200: {
+            "model": GmailInboxResponse,
+            "description": "Successfully fetched Gmail inbox messages",
+        },
+        404: {"description": "No Gmail messages found for the user"},
+    },
+)
+async def get_inbox_messages(
+    gmail_service: Annotated[Resource, Depends(valid_gmail_service)],
+    query: Annotated[GmailInboxQuery, Depends()],
+    pagination: Annotated[PaginationQuery, Depends()],
 ):
-    return await list_gmail_inbox(
-        db=db,
-        record=record,
-        max_results=max_results,
-        sender=sender,
-        label=label,
-        after=after,
-        before=before,
-    )
+    return await get_gmail_messages(gmail_service, pagination, query)
