@@ -25,7 +25,7 @@ from src.google.schemas import (
     GmailInboxQuery,
     GmailInboxResponse,
     GoogleOAuth2CredentialResponse,
-    GoogleOAuth2RedirectResponse, GmailMessageResponse,
+    GoogleOAuth2RedirectResponse,
 )
 from src.schemas import PaginationQuery
 
@@ -57,7 +57,7 @@ async def oauth2(
     valid_user: Annotated[User, Depends(require_role("merchant", "admin"))],
     db: AsyncSession = Depends(get_db),
 ):
-    return await initiate_oauth2(db, valid_user)
+    return await initiate_oauth2(db, valid_user.id)
 
 
 @router.get(

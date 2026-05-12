@@ -1,11 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.auth.models import User
 from src.google.models import GoogleOAuthCredential, GoogleOAuthState
 
-
 from src.google.service.client import (
-    fetch_google_oauth_state,
+    build_google_oauth_state,
     fetch_google_oauth_credential,
     get_gmail_service,
     fetch_refreshed_google_oauth_credential,
@@ -22,20 +20,20 @@ from src.google.service.gmail import get_current_user_email
 
 
 # =============== OAUTH2 INITIATE AND EXCHANGE FLOW ===============
-async def initiate_oauth2(db: AsyncSession, valid_user: User) -> GoogleOAuthState:
+async def initiate_oauth2(db: AsyncSession, valid_user_id: int) -> GoogleOAuthState:
     """Replace any lingering OAuth state and persist a fresh one for the user.
 
     Args:
         db: Active async database session used to clear prior state rows and store
             the newly generated OAuth state.
-        valid_user: Authenticated app user starting the Google OAuth flow.
+        valid_user_id: App ID of the authenticated user starting the Google OAuth flow.
 
     Returns:
         GoogleOAuthState: Newly created OAuth state user_google_credential containing
             the authorization URL and persisted app-side state after any
             previous unconsumed state for the same user has been removed.
     """
-    new_state = fetch_google_oauth_state(valid_user)
+    new_state = await build_google_oauth_state(valid_user_id)
 
     return await create_or_replace_state(db, new_state)
 
@@ -80,7 +78,10 @@ async def sync_access_token(
     user_google_credential: GoogleOAuthCredential,
 ) -> GoogleOAuthCredential:
     refreshed_credential = await fetch_refreshed_google_oauth_credential(user_google_credential)
-    if refreshed_credential is None:
+    if (
+        refreshed_credential.access_token == user_google_credential.access_token
+        and refreshed_credential.expiry == user_google_credential.expiry
+    ):
         return user_google_credential
 
     return await refresh_oauth_access_token(db, user_google_credential, refreshed_credential)
@@ -93,7 +94,7 @@ async def connect_gmail_service(
 ) -> GoogleOAuthCredential:
     user_google_credential = await sync_access_token(db, user_google_credential)
 
-    service = get_gmail_service(user_google_credential)
+    service = await get_gmail_service(user_google_credential)
     email_address = await get_current_user_email(service)
 
     return await patch_oauth_credential(

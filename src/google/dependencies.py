@@ -66,7 +66,7 @@ async def valid_google_oauth_credential(
     if user_google_credential is None:
         raise InvalidGoogleOAuthCredential
 
-    if await credential_is_stale(user_google_credential):
+    if credential_is_stale(user_google_credential):
         raise InvalidGoogleOAuthCredential
 
     return user_google_credential
@@ -81,4 +81,4 @@ async def valid_gmail_service(
 
     synced_credential = await sync_access_token(db, user_google_credential)
 
-    return get_gmail_service(synced_credential)
+    return await get_gmail_service(synced_credential)

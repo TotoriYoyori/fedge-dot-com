@@ -8,7 +8,7 @@ from pydantic.alias_generators import to_camel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-# --------------- API RESPONSE SCHEMAS BASE INHERITANCE
+# =============== API RESPONSE SCHEMAS BASE INHERITANCE ===============
 class CustomBaseModel(BaseModel):
     """
     Base model with shared configuration for all project schemas.
@@ -30,19 +30,19 @@ class CustomBaseModel(BaseModel):
     )
 
 
-# --------------- OFFSET AND LIMIT SHARED QUERY PATTERN
+# =============== OFFSET AND LIMIT SHARED QUERY PATTERN ===============
 class PaginationQuery(CustomBaseModel):
     offset: Annotated[int, Query(ge=0)] = 0
     limit: Annotated[int, Query(ge=1, le=100)] = 5
 
 
-# --------------- MODULE CONFIGURATION BASE CLASS
+# =============== MODULE CONFIGURATION BASE CLASS ===============
 class DomainSettings(BaseSettings):
     """
     Base settings class for domain-level configuration.
 
     Loads values from environment variables and a shared `.env` file,
-    providing defaults for template and static resource paths.
+    as well as compile all static and templates path for the entire project.
 
     Attributes:
         ENVIRONMENT (str): Current runtime environment (e.g., local, dev, prod).

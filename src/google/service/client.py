@@ -4,15 +4,9 @@ import asyncer
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
-from googleapiclient.discovery import build
-from pydantic import ValidationError
+from googleapiclient.discovery import Resource, build
 
-from src.auth.models import User
-from src.google.exceptions import (
-    ClientSecretNotFound,
-    FaultyFlow,
-    InvalidPKCE,
-)
+from src.google.exceptions import ClientSecretNotFound, InvalidPKCE
 from src.google.models import GoogleOAuthCredential, GoogleOAuthState
 from src.google.schemas import GoogleOAuth2CredentialCreate, GoogleOAuth2StateCreate
 from src.google.settings import google_settings
@@ -77,7 +71,7 @@ def _attach_pkce(flow: Flow, state: str, code_verifier: str) -> Flow:
     return flow
 
 
-def _convert_credential(user_google_credential: GoogleOAuthCredential) -> Credentials:
+def _convert_to_google_credential(user_google_credential: GoogleOAuthCredential) -> Credentials:
     """Convert an app-layer OAuth user_google_credential into Google's SDK primitive.
 
     Args:
@@ -87,7 +81,7 @@ def _convert_credential(user_google_credential: GoogleOAuthCredential) -> Creden
         Credentials: Google new_credential built from the stored application user_google_credential.
 
     Example:
-        >>> new_credential = _convert_credential(user_google_credential)
+        >>> new_credential = _convert_to_google_credential(user_google_credential)
         >>> new_credential.token
     """
     credentials = Credentials(
@@ -108,12 +102,33 @@ def _convert_credential(user_google_credential: GoogleOAuthCredential) -> Creden
     return credentials
 
 
+def _merge_refreshed_credentials(
+    credentials: Credentials,
+    user_google_credential: GoogleOAuthCredential,
+) -> GoogleOAuth2CredentialCreate:
+    """Merge refreshed SDK credentials with persisted app credential fields."""
+    return GoogleOAuth2CredentialCreate(
+        user_id=user_google_credential.user_id,
+        access_token=credentials.token,
+        refresh_token=credentials.refresh_token
+            or user_google_credential.refresh_token,
+        token_uri=credentials.token_uri or user_google_credential.token_uri,
+        client_id=credentials.client_id or user_google_credential.client_id,
+        client_secret=credentials.client_secret
+            or user_google_credential.client_secret,
+        scopes=",".join(credentials.scopes or [])
+            or user_google_credential.scopes,
+        expiry=credentials.expiry,
+        email_address=user_google_credential.email_address,
+    )
+
+
 # =============== FETCH STATE FROM GOOGLE SERVER ===============
-def fetch_google_oauth_state(valid_user: User) -> GoogleOAuth2StateCreate:
-    """Build and persist an OAuth authorization flow state.
+def _build_google_oauth_state(valid_user_id: int) -> GoogleOAuth2StateCreate:
+    """Build an OAuth authorization flow state.
 
     Args:
-        valid_user: Authenticated application user starting the Google OAuth flow.
+        valid_user_id: App ID of the authenticated user starting the Google OAuth flow.
 
     Returns:
         GoogleOAuth2StateCreate: State payload containing the generated OAuth
@@ -123,30 +138,47 @@ def fetch_google_oauth_state(valid_user: User) -> GoogleOAuth2StateCreate:
         FaultyFlow: If Google authorization URL generation fails.
 
     Example:
-        >>> new_state = fetch_google_oauth_state(valid_user)
+        >>> new_state = _build_google_oauth_state(valid_user_id)
         >>> new_state.user_id
     """
     flow = _fetch_base_flow()
+    auth_url, state = flow.authorization_url(
+        access_type=google_settings.FLOW_ACCESS_TYPE,
+        include_granted_scopes=google_settings.FLOW_INCLUDE_GRANTED_SCOPES,
+        prompt=google_settings.FLOW_PROMPT,
+    )
 
-    try:
-        auth_url, state = flow.authorization_url(
-            access_type=google_settings.FLOW_ACCESS_TYPE,
-            include_granted_scopes=google_settings.FLOW_INCLUDE_GRANTED_SCOPES,
-            prompt=google_settings.FLOW_PROMPT,
-        )
-        new_state = GoogleOAuth2StateCreate(
-            state=state,
-            auth_url=auth_url,
-            user_id=valid_user.id,
-            code_verifier=flow.code_verifier,
-        )
-    except ValidationError:
-        raise FaultyFlow
-    else:
-        return new_state
+    return GoogleOAuth2StateCreate(
+        state=state,
+        auth_url=auth_url,
+        user_id=valid_user_id,
+        code_verifier=flow.code_verifier,
+    )
+
+
+async def build_google_oauth_state(valid_user_id: int) -> GoogleOAuth2StateCreate:
+    """Build an OAuth state without blocking the event loop on Google flow setup.
+
+    Args:
+        valid_user_id: App ID of the authenticated user starting the Google OAuth flow.
+
+    Returns:
+        GoogleOAuth2StateCreate: State payload containing the generated OAuth
+        state, authorization URL, user id, and PKCE code verifier.
+    """
+    return await asyncer.asyncify(_build_google_oauth_state)(valid_user_id)
 
 
 def state_is_stale(oauth_state: GoogleOAuthState) -> bool:
+    """Return whether a persisted OAuth state has exceeded its allowed lifetime.
+
+    Args:
+        oauth_state: Persisted Google OAuth state containing the creation time
+            used to calculate expiry.
+
+    Returns:
+        bool: ``True`` when the OAuth state is expired, otherwise ``False``.
+    """
     expires_at = oauth_state.created_time + timedelta(
         minutes=google_settings.FLOW_STATE_TTL_MINUTES
     )
@@ -182,50 +214,47 @@ async def fetch_google_oauth_credential(
     """
     flow = _fetch_base_flow()
     verified_flow = _attach_pkce(flow, oauth_state.state, oauth_state.code_verifier)
-    verified_flow.fetch_token(code=exchange_code)
+    await asyncer.asyncify(verified_flow.fetch_token)(code=exchange_code)
 
     credentials = verified_flow.credentials
-    try:
-        return GoogleOAuth2CredentialCreate(
-            user_id=oauth_state.user_id,
-            access_token=credentials.token,
-            refresh_token=credentials.refresh_token,
-            token_uri=credentials.token_uri or "https://oauth2.googleapis.com/token",
-            client_id=credentials.client_id,
-            client_secret=credentials.client_secret,
-            scopes=",".join(credentials.scopes or []),
-            expiry=credentials.expiry,
-            email_address=None,
-        )
-    except ValidationError:
-        raise FaultyFlow
+
+    return GoogleOAuth2CredentialCreate(
+        user_id=oauth_state.user_id,
+        access_token=credentials.token,
+        refresh_token=credentials.refresh_token,
+        token_uri=credentials.token_uri or "https://oauth2.googleapis.com/token",
+        client_id=credentials.client_id,
+        client_secret=credentials.client_secret,
+        scopes=",".join(credentials.scopes or []),
+        expiry=credentials.expiry,
+        email_address=None,
+    )
 
 
 async def fetch_refreshed_google_oauth_credential(
     user_google_credential: GoogleOAuthCredential,
-) -> GoogleOAuth2CredentialCreate | None:
-    credentials = _convert_credential(user_google_credential)
+) -> GoogleOAuth2CredentialCreate:
+    """Return a refreshed Google OAuth credential payload.
+
+    Returns:
+        GoogleOAuth2CredentialCreate: Existing credential payload when the
+        stored access token is still usable, otherwise a refreshed credential
+        payload from Google's SDK.
+
+    Example:
+        >>> async def run_example() -> GoogleOAuth2CredentialCreate:
+        ...     return await fetch_refreshed_google_oauth_credential(user_google_credential)
+    """
+    credentials = _convert_to_google_credential(user_google_credential)
     if not credentials.expired:
-        return None
+        return GoogleOAuth2CredentialCreate.model_validate(user_google_credential)
 
     await asyncer.asyncify(credentials.refresh)(Request())
 
-    return GoogleOAuth2CredentialCreate(
-        user_id=user_google_credential.user_id,
-        access_token=credentials.token,
-        refresh_token=credentials.refresh_token
-            or user_google_credential.refresh_token,
-        token_uri=credentials.token_uri or user_google_credential.token_uri,
-        client_id=credentials.client_id or user_google_credential.client_id,
-        client_secret=credentials.client_secret
-            or user_google_credential.client_secret,
-        scopes=",".join(credentials.scopes or []) or user_google_credential.scopes,
-        expiry=credentials.expiry,
-        email_address=user_google_credential.email_address,
-    )
+    return _merge_refreshed_credentials(credentials, user_google_credential)
 
 
-async def credential_is_stale(
+def credential_is_stale(
     user_google_credential: GoogleOAuthCredential,
 ) -> bool:
     """Return whether a stored Google OAuth user_google_credential is expired and not refreshable.
@@ -237,16 +266,37 @@ async def credential_is_stale(
         bool: ``True`` when the user_google_credential is expired and has no refresh token.
 
     Example:
-        >>> async def run_example() -> bool:
-        ...     return await credential_is_stale(user_google_credential)
+        >>> credential_is_stale(user_google_credential)
     """
-    credentials = _convert_credential(user_google_credential)
+    credentials = _convert_to_google_credential(user_google_credential)
 
     return bool(credentials.expired and not credentials.refresh_token)
 
 
 # =============== GMAIL CLIENT ===============
-def get_gmail_service(user_google_credential: GoogleOAuthCredential):
-    creds = _convert_credential(user_google_credential)
+def _build_gmail_service(user_google_credential: GoogleOAuthCredential) -> Resource:
+    """Build a Gmail API resource from a user's Google OAuth credential. Called by get_gmail_service for async.
 
-    return build("gmail","v1", credentials=creds, cache_discovery=False)
+    Returns:
+        Resource: Authorized Gmail API resource client.
+
+    Example:
+        >>> gmail_service = _build_gmail_service(user_google_credential)
+        >>> gmail_service.users()
+    """
+    creds = _convert_to_google_credential(user_google_credential)
+
+    return build("gmail", "v1", credentials=creds, cache_discovery=False)
+
+
+async def get_gmail_service(user_google_credential: GoogleOAuthCredential) -> Resource:
+    """Build a Gmail API service without blocking the event loop.
+
+    Args:
+        user_google_credential: Persisted Google OAuth credential used to
+            authorize Gmail API requests.
+
+    Returns:
+        Resource: Gmail API resource client.
+    """
+    return await asyncer.asyncify(_build_gmail_service)(user_google_credential)

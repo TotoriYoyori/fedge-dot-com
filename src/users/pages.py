@@ -81,7 +81,7 @@ async def dashboard_update_orders(
         )
 
     record = await sync_access_token(db, record)
-    gmail_service = get_gmail_service(record)
+    gmail_service = await get_gmail_service(record)
     fetch_response = await fetch_and_persist_benify_orders(
         db=db,
         gmail_service=gmail_service,

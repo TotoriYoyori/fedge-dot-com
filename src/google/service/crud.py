@@ -23,18 +23,13 @@ async def create_state(
 
 
 async def get_state(db: AsyncSession, state: str) -> GoogleOAuthState:
-    stmt = select(GoogleOAuthState).where(
-        GoogleOAuthState.state == state
-    )
+    stmt = select(GoogleOAuthState).where(GoogleOAuthState.state == state)
     result = await db.execute(stmt)
 
     return result.scalar_one_or_none()
 
 
-async def delete_state(
-    db: AsyncSession,
-    oauth_state: GoogleOAuthState
-) -> GoogleOAuthState:
+async def delete_state(db: AsyncSession, oauth_state: GoogleOAuthState) -> GoogleOAuthState:
     await db.delete(oauth_state)
     await db.commit()
 
@@ -139,10 +134,7 @@ async def update_oauth_credential(
     return current_credential
 
 
-async def get_oauth_credential(
-    db: AsyncSession,
-    user_id: int,
-) -> GoogleOAuthCredential | None:
+async def get_oauth_credential(db: AsyncSession, user_id: int) -> GoogleOAuthCredential | None:
     """Get the stored Google OAuth user_google_credential for a user from the app db.
 
     Args:
@@ -158,9 +150,7 @@ async def get_oauth_credential(
         ...     user_google_credential = await get_oauth_credential(db, 42)
         ...     return user_google_credential is not None
     """
-    stmt = select(GoogleOAuthCredential).where(
-        GoogleOAuthCredential.user_id == user_id
-    )
+    stmt = select(GoogleOAuthCredential).where(GoogleOAuthCredential.user_id == user_id)
     result = await db.execute(stmt)
 
     return result.scalar_one_or_none()
