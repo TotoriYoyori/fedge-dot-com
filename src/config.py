@@ -41,6 +41,4 @@ class Config(BaseSettings):
 def get_settings() -> Config:
     return Config()
 
-
-# --------------- SHARED CONFIGURATION OBJECT
 settings = Config()
