@@ -11,7 +11,7 @@ from pydantic import (
     field_validator,
 )
 
-from src.schemas import CustomBaseModel
+from src.schemas import CustomBaseModel, QueryModel
 from src.google.exceptions import (
     InvalidGoogleOAuthCallbackState,
     InvalidGoogleOAuthCredential
@@ -93,10 +93,7 @@ class GoogleOAuth2CredentialCreate(CustomBaseModel):
     created_time: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_time: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
-    @field_validator(
-        "created_time", "updated_time", "expiry",
-        mode="before"
-    )
+    @field_validator("created_time", "updated_time", "expiry", mode="before")
     @classmethod
     def normalize_utc(cls, value:datetime) -> datetime:
         if value is None:
@@ -144,7 +141,7 @@ class GoogleOAuth2CredentialResponse(CustomBaseModel):
 
 
 # =============== INBOX SCHEMAS ===============
-class GmailInboxQuery(CustomBaseModel):
+class GmailInboxQuery(QueryModel):
     """
     Schema for Gmail inbox search filters accepted by the inbox listing endpoint.
 
@@ -157,14 +154,8 @@ class GmailInboxQuery(CustomBaseModel):
         ... }
     """
 
-    from_: Annotated[
-        Optional[str],
-        Query(alias="from", min_length=1, pattern=r"^\S+$"),
-    ] = None
-    label: Annotated[
-        Optional[str],
-        Query(min_length=1, pattern=r"^\S+$"),
-    ] = None
+    from_: Annotated[Optional[str], Query(alias="from", min_length=1, pattern=r"^\S+$")] = None
+    label: Annotated[Optional[str], Query(min_length=1, pattern=r"^\S+$")] = None
     after: Annotated[Optional[date], Query(examples=["2026-05-01"])] = None
     before: Annotated[Optional[date], Query(examples=["2026-05-10"])] = None
 

@@ -1,52 +1,40 @@
+from typing import Optional
+
+from pydantic import EmailStr, model_validator
+
+from src.notification.schemas import EmailProviderName
 from src.schemas import DomainSettings
 
-
+# =============== SETTINGS ===============
 class NotificationSettings(DomainSettings):
-    DEFAULT_TEMPLATE_NAME: str = "ho_3.html"
+    # ===== Global App
+    EMAIL_PROVIDER: EmailProviderName = EmailProviderName.RESEND
+    EMAIL_FROM_NAME: str
+    EMAIL_FROM_ADDRESS: EmailStr
+    # ===== Resend-specific settings
+    RESEND_API_KEY: Optional[str] = None
+    # ===== Mailtrap-specific settings
+    MAILTRAP_API_KEY: Optional[str] = None
+    MAILTRAP_SANDBOX_INBOX_ID: Optional[int] = None
 
-    SMTP_SERVER: str
-    SMTP_PORT: int
-    SMTP_USERNAME: str
-    SMTP_PASSWORD: str
-    SMTP_FROM_NAME: str
+    @model_validator(mode="after")
+    def validate_provider_settings(self) -> "NotificationSettings":
+        if self.EMAIL_PROVIDER == EmailProviderName.RESEND and not self.RESEND_API_KEY:
+            raise ValueError("RESEND_API_KEY is required when EMAIL_PROVIDER is resend.")
 
-    RESEND_API_KEY: str
+        if self.EMAIL_PROVIDER == EmailProviderName.MAILTRAP and (
+            not self.MAILTRAP_API_KEY or not self.MAILTRAP_SANDBOX_INBOX_ID
+        ):
+            raise ValueError(
+                "MAILTRAP_API_KEY and MAILTRAP_SANDBOX_INBOX_ID are required " "when EMAIL_PROVIDER is mailtrap."
+            )
 
-    SANDBOX_SMTP_HOST: str | None = None
-    SANDBOX_SMTP_PORT: int | None = None
-    SANDBOX_SMTP_USERNAME: str | None = None
-    SANDBOX_SMTP_PASSWORD: str | None = None
-    SANDBOX_SMTP_FROM_NAME: str | None = None
-
-    @property
-    def smtp_host(self) -> str:
-        if self.ENVIRONMENT.lower() == "local" and self.SANDBOX_SMTP_HOST:
-            return self.SANDBOX_SMTP_HOST
-        return self.SMTP_SERVER
-
-    @property
-    def smtp_port(self) -> int:
-        if self.ENVIRONMENT.lower() == "local" and self.SANDBOX_SMTP_PORT:
-            return self.SANDBOX_SMTP_PORT
-        return self.SMTP_PORT
+        return self
 
     @property
-    def smtp_username(self) -> str:
-        if self.ENVIRONMENT.lower() == "local" and self.SANDBOX_SMTP_USERNAME:
-            return self.SANDBOX_SMTP_USERNAME
-        return self.SMTP_USERNAME
-
-    @property
-    def smtp_password(self) -> str:
-        if self.ENVIRONMENT.lower() == "local" and self.SANDBOX_SMTP_PASSWORD:
-            return self.SANDBOX_SMTP_PASSWORD
-        return self.SMTP_PASSWORD
-
-    @property
-    def smtp_from_name(self) -> str:
-        if self.ENVIRONMENT.lower() == "local" and self.SANDBOX_SMTP_FROM_NAME:
-            return self.SANDBOX_SMTP_FROM_NAME
-        return self.SMTP_FROM_NAME
+    def email_from(self) -> str:
+        return f"{self.EMAIL_FROM_NAME} <{self.EMAIL_FROM_ADDRESS}>"
 
 
+# =============== APP INSTANCE ===============
 notification_settings = NotificationSettings()

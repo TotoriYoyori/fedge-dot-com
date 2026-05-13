@@ -14,12 +14,8 @@ class Token(BaseModel):
         >>> {"access_token": "random.jwt.token", "token_type": "bearer"}
     """
 
-    access_token: str = Field(
-        ..., description="The JWT access access_token used for authorization."
-    )
-    token_type: str = Field(
-        ..., description='The type of the access_token (e.g., "bearer").'
-    )
+    access_token: str = Field(..., description="The JWT access access_token used for authorization.")
+    token_type: str = Field(..., description='The type of the access_token (e.g., "bearer").')
 
 
 class AuthCreate(CustomBaseModel):
@@ -35,16 +31,9 @@ class AuthCreate(CustomBaseModel):
         ... }
     """
 
-    username: str = Field(
-        ...,
-        min_length=1,
-        max_length=255,
-        description="The unique username for the user.",
-    )
+    username: str = Field(..., min_length=1, max_length=255, description="The unique username for the user.")
     email: EmailStr = Field(..., description="The valid email address of the user.")
-    password: str = Field(
-        ..., min_length=8, description="The user's password (minimum 8 characters)."
-    )
+    password: str = Field(..., min_length=8, description="The user's password (minimum 8 characters).")
     role_key: str | None = Field(
         default=None,
         description="Optional special key to assign a specific role (e.g., 'admin') during registration.",

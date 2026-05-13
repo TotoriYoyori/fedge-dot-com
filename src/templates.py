@@ -5,7 +5,6 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from jinja2 import Environment, FileSystemLoader
 
-
 SRC_DIR = Path(__file__).resolve().parent
 
 
@@ -57,3 +56,4 @@ def _discover_dirs(folder_name: str) -> list[str]:
 page_loader = FileSystemLoader(_discover_dirs("templates"))
 page_env = Environment(loader=page_loader)
 templates = Jinja2Templates(env=page_env)
+notification_email_template = page_env.get_template(Redirect.NOTIFICATION_HO_3)

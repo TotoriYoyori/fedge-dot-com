@@ -6,8 +6,8 @@ from pydantic import ValidationError
 from src.auth.dependencies import require_role
 from src.auth.models import User
 from src.auth.redirect import valid_cookie_token
-from src.notification.schemas import SendContext
-from src.notification.service import EmailService
+from src.notification.schemas import EmailSendPayload, TemplatePreviewQuery
+from src.notification.service import send_email
 from src.schemas import RouteDecoratorPreset
 from src.templates import Redirect, templates
 
@@ -39,6 +39,23 @@ async def send_notification_page(
     )
 
 
+@page.get(
+    "/templates",
+    name="preview_notification_template",
+    summary="Render a notification email template preview",
+    **RouteDecoratorPreset.html_get(),
+)
+async def preview_email_template(
+    request: Request,
+    preview_order: Annotated[TemplatePreviewQuery, Depends()],
+):
+    return templates.TemplateResponse(
+        request=request,
+        name=Redirect.NOTIFICATION_HO_3,
+        context=preview_order.model_dump(),
+    )
+
+
 @page.post(
     "/",
     name="send_notification_submit",
@@ -47,30 +64,32 @@ async def send_notification_page(
 )
 async def send_notification_submit(
     request: Request,
-    current_user: Annotated[User, Depends(require_role("merchant", "admin", use_cookie=True))],
+    current_user: Annotated[
+        User, Depends(require_role("merchant", "admin", use_cookie=True))
+    ],
 ):
     form = await request.form()
     form_data = dict(form)
-    
+
     try:
-        send_context = SendContext.model_validate(form_data)
+        send_payload = EmailSendPayload.model_validate(form_data)
     except ValidationError:
         # For simplicity, we can render the same page with an error or let global handler catch it
-        # Here we follow the auth pattern of raising an exception if needed, 
+        # Here we follow the auth pattern of raising an exception if needed,
         # but let's try to render back with error if we had a specific one.
         # Since I don't want to overcomplicate, I'll just re-raise or handle.
         return templates.TemplateResponse(
             request=request,
             name="send_notification.html",
             context={
-                "user": current_user, 
+                "user": current_user,
                 "current_user": current_user,
-                "error": "Invalid form data. Please check your inputs."
+                "error": "Invalid form data. Please check your inputs.",
             },
-            status_code=400
+            status_code=400,
         )
 
-    response = await EmailService.send_email(send_context)
+    response = await send_email(send_payload)
 
     return templates.TemplateResponse(
         request=request,
@@ -79,6 +98,6 @@ async def send_notification_submit(
             "user": current_user,
             "current_user": current_user,
             "success": True,
-            "email_id": response.id
+            "email_id": response.id,
         },
     )

@@ -592,6 +592,7 @@ dependencies = [
     { name = "google-auth" },
     { name = "google-auth-oauthlib" },
     { name = "jinja2" },
+    { name = "mailtrap" },
     { name = "psycopg2-binary" },
     { name = "pwdlib", extra = ["argon2"] },
     { name = "pydantic", extra = ["email"] },
@@ -627,6 +628,7 @@ requires-dist = [
     { name = "google-auth", specifier = "==2.49.1" },
     { name = "google-auth-oauthlib", specifier = "==1.3.1" },
     { name = "jinja2", specifier = "==3.1.6" },
+    { name = "mailtrap", specifier = ">=2.5.0" },
     { name = "psycopg2-binary", specifier = "==2.9.10" },
     { name = "pwdlib", specifier = "==0.3.0" },
     { name = "pwdlib", extras = ["argon2"] },
@@ -972,6 +974,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/02/49/9d1284d0dc65e2c757b74c6687b6d319b02f822ad039e5c512df9194d9dd/jupyter_core-5.9.1.tar.gz", hash = "sha256:4d09aaff303b9566c3ce657f580bd089ff5c91f5f89cf7d8846c3cdf465b5508", size = 89814, upload-time = "2025-10-16T19:19:18.444Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e7/e7/80988e32bf6f73919a113473a604f5a8f09094de312b9d52b79c2df7612b/jupyter_core-5.9.1-py3-none-any.whl", hash = "sha256:ebf87fdc6073d142e114c72c9e29a9d7ca03fad818c5d300ce2adc1fb0743407", size = 29032, upload-time = "2025-10-16T19:19:16.783Z" },
+]
+
+[[package]]
+name = "mailtrap"
+version = "2.5.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic" },
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b3/8c/9049a6baffc90d348349539374891d9140e745a5a856abaf817b04da45c0/mailtrap-2.5.0.tar.gz", hash = "sha256:ae2de07c563bbae9b51afda47e377b05b3d141f40206144233e781e555fdca2e", size = 28990, upload-time = "2026-03-31T07:18:34.698Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f1/4a/b756a4ad085ec79f72af0c70fb7a980051bdde3995d1c4ede223e56bd374/mailtrap-2.5.0-py3-none-any.whl", hash = "sha256:f317b9a03450e4bf74d4086fa568ddd49e42a6315f2a79e8c8a88f83749bf75c", size = 41889, upload-time = "2026-03-31T07:18:33.718Z" },
 ]
 
 [[package]]

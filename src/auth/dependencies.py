@@ -89,7 +89,7 @@ def require_role(*roles: str, use_cookie: bool = False) -> Callable:
     Example:
         >>> async def send_notify_email(
         >>>     valid_login_user: Annotated[User, Depends(require_role("merchant", "admin"))],
-        >>>     send_context: SendContext
+        >>>     send_context: EmailSendPayload
         >>> ) -> None:
     """
     check_cookie_or_token = valid_cookie_token if use_cookie else valid_access_token

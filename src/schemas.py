@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import Query, status
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
-from pydantic.alias_generators import to_camel
+from pydantic.alias_generators import to_camel, to_pascal
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -30,8 +30,24 @@ class CustomBaseModel(BaseModel):
     )
 
 
+class QueryModel(BaseModel):
+    """
+    Base Model with shared configuration for query parameters.
+
+    Features:
+        - Alias generation with hyphenated field names (kebab-case).
+        - Forbid extra fields in the model.
+        - Populate by original Python field names.
+    """
+    model_config = SettingsConfigDict(
+        extra="forbid",
+        populate_by_name=True,
+        str_strip_whitespace=True,
+    )
+
+
 # =============== OFFSET AND LIMIT SHARED QUERY PATTERN ===============
-class PaginationQuery(CustomBaseModel):
+class PaginationQuery(QueryModel):
     offset: Annotated[int, Query(ge=0)] = 0
     limit: Annotated[int, Query(ge=1, le=100)] = 5
 
