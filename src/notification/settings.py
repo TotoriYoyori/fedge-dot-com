@@ -8,7 +8,7 @@ from src.schemas import DomainSettings
 # =============== SETTINGS ===============
 class NotificationSettings(DomainSettings):
     # ===== Global App
-    EMAIL_PROVIDER: EmailProviderName = EmailProviderName.RESEND
+    EMAIL_PROVIDER: EmailProviderName
     EMAIL_FROM_NAME: str
     EMAIL_FROM_ADDRESS: EmailStr
     # ===== Resend-specific settings

@@ -1,10 +1,10 @@
-from datetime import datetime
-from email.utils import parsedate_to_datetime
+from datetime import UTC, datetime
 from enum import StrEnum
-from typing import Annotated, Any, Optional
+from typing import Annotated, Optional
 
+from bs4 import BeautifulSoup
 from fastapi import Query
-from pydantic import EmailStr, Field, model_validator
+from pydantic import EmailStr, Field, field_validator, model_validator
 
 from src.notification.exceptions import EmailResponseMismatch
 from src.schemas import CustomBaseModel, QueryModel
@@ -12,14 +12,30 @@ from src.schemas import CustomBaseModel, QueryModel
 
 # =============== ENUM SCHEMAS ===============
 class EmailProviderName(StrEnum):
-    """Only supports either RESEND or MAILTRAP modes."""
+    """Only supports either 'resend' or 'mailtrap' modes.
 
+    Resend should be used for all production environments, while mailtrap is for development and testing.
+    """
     RESEND = "resend"
     MAILTRAP = "mailtrap"
 
 
 # =============== INPUT SCHEMAS ===============
-class EmailSendPayload(CustomBaseModel):
+class EmailSendRequest(CustomBaseModel):
+    """
+    Schema for sending a notification email to a customer.
+
+    Example:
+        >>> {
+        ...     "name": "Cloud Strife",
+        ...     "to_email": "customer@example.com",
+        ...     "treatment": "massage",
+        ...     "location": "Stockholm",
+        ...     "order_number": "order_number_123",
+        ...     "subject_line": "Du har redan bestallt friskvardsbehandling hos oss. Boka nu!",
+        ... }
+    """
+
     name: Optional[str] = None
     to_email: EmailStr
     treatment: Annotated[str, Field(min_length=1, max_length=128)] = "en eller flera behandlingar"
@@ -32,6 +48,18 @@ class EmailSendPayload(CustomBaseModel):
 
 # =============== QUERY SCHEMAS ===============
 class TemplatePreviewQuery(QueryModel):
+    """
+    Query parameters for previewing a rendered notification email template.
+
+    Example:
+        >>> {
+        ...     "name": "Cloud Strife",
+        ...     "treatment": "en eller flera behandlingar",
+        ...     "location": "en av vara kliniker",
+        ...     "order_number": "order_number_123",
+        ... }
+    """
+
     name: Annotated[Optional[str], Query(max_length=64)] = "Cloud Strife"
     treatment: Annotated[Optional[str], Query(max_length=255)] = "en eller flera behandlingar"
     location: Annotated[Optional[str], Query(max_length=255)] = "en av vara kliniker"
@@ -40,10 +68,32 @@ class TemplatePreviewQuery(QueryModel):
 
 # =============== ADAPTER SCHEMAS ===============
 class EmailProviderPayload(CustomBaseModel):
+    """
+    Adapter payload sent to the configured email provider.
+
+    Example:
+        >>> {
+        ...     "to_email": "customer@example.com",
+        ...     "subject_line": "Du har redan bestallt friskvardsbehandling hos oss. Boka nu!",
+        ...     "html_body": "<p>Thank you for your order.</p>",
+        ...     "plain_body": "Thank you for your order.",
+        ... }
+    """
+
     to_email: str
     subject_line: str
     html_body: str
     plain_body: str
+
+    @field_validator("html_body")
+    @classmethod
+    def validate_html_body(cls, value: str) -> str:
+        soup = BeautifulSoup(value, "html.parser")
+
+        if soup.find() is None:
+            raise ValueError("html_body must contain valid HTML markup.")
+
+        return value
 
 
 # =============== OUTPUT SCHEMAS ===============
@@ -65,7 +115,7 @@ class EmailSendResponse(CustomBaseModel):
 
     id: str | None = None
     status: str = "accepted"
-    accepted_at: Optional[datetime] = None
+    accepted_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     daily_quota: Optional[int] = None
     monthly_quota: Optional[int] = None
     provider: EmailProviderName
@@ -73,7 +123,7 @@ class EmailSendResponse(CustomBaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def parse_provider_metadata(cls, data: Any) -> Any:
+    def parse_provider_metadata[ProviderResponse](cls, data: ProviderResponse) -> ProviderResponse:
         payload = dict(data)
         http_headers = {key.lower(): value for key, value in payload.pop("http_headers", {}).items()}
 
@@ -81,7 +131,6 @@ class EmailSendResponse(CustomBaseModel):
             return payload
 
         try:
-            payload["accepted_at"] = parsedate_to_datetime(http_headers["date"])
             payload["daily_quota"] = int(http_headers["x-resend-daily-quota"])
             payload["monthly_quota"] = int(http_headers["x-resend-monthly-quota"])
         except (TypeError, ValueError, IndexError, AttributeError, KeyError) as exc:

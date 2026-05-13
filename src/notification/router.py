@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, status
 from src.auth.dependencies import require_role
 from src.auth.models import User
 
-from src.notification.schemas import EmailSendPayload, EmailSendResponse
+from src.notification.schemas import EmailSendRequest, EmailSendResponse
 from src.notification.service import send_email
 
 # =============== ROUTER ===============
@@ -26,6 +26,6 @@ router = APIRouter(prefix="/api/v1/notification", tags=["api-notification"])
 )
 async def send_notify_email(
     _valid_user: Annotated[User, Depends(require_role("admin"))],
-    send_payload: EmailSendPayload,
+    send_request: EmailSendRequest,
 ):
-    return await send_email(send_payload)
+    return await send_email(send_request)

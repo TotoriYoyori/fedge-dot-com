@@ -6,7 +6,8 @@ from pydantic import ValidationError
 from src.auth.dependencies import require_role
 from src.auth.models import User
 from src.auth.redirect import valid_cookie_token
-from src.notification.schemas import EmailSendPayload, TemplatePreviewQuery
+
+from src.notification.schemas import EmailSendRequest, TemplatePreviewQuery
 from src.notification.service import send_email
 from src.schemas import RouteDecoratorPreset
 from src.templates import Redirect, templates
@@ -28,7 +29,6 @@ async def send_notification_page(
     if not current_user:
         return Redirect.to_home()
 
-    # Check for merchant/admin role for SSR as well
     if current_user.role not in ("merchant", "admin"):
         return Redirect.to_home()
 
@@ -36,23 +36,6 @@ async def send_notification_page(
         request=request,
         name="send_notification.html",
         context={"user": current_user, "current_user": current_user},
-    )
-
-
-@page.get(
-    "/templates",
-    name="preview_notification_template",
-    summary="Render a notification email template preview",
-    **RouteDecoratorPreset.html_get(),
-)
-async def preview_email_template(
-    request: Request,
-    preview_order: Annotated[TemplatePreviewQuery, Depends()],
-):
-    return templates.TemplateResponse(
-        request=request,
-        name=Redirect.NOTIFICATION_HO_3,
-        context=preview_order.model_dump(),
     )
 
 
@@ -72,7 +55,7 @@ async def send_notification_submit(
     form_data = dict(form)
 
     try:
-        send_payload = EmailSendPayload.model_validate(form_data)
+        send_request = EmailSendRequest.model_validate(form_data)
     except ValidationError:
         # For simplicity, we can render the same page with an error or let global handler catch it
         # Here we follow the auth pattern of raising an exception if needed,
@@ -89,7 +72,7 @@ async def send_notification_submit(
             status_code=400,
         )
 
-    response = await send_email(send_payload)
+    response = await send_email(send_request)
 
     return templates.TemplateResponse(
         request=request,
@@ -100,4 +83,21 @@ async def send_notification_submit(
             "success": True,
             "email_id": response.id,
         },
+    )
+
+
+@page.get(
+    "/templates",
+    name="preview_notification_template",
+    summary="Render a notification email template preview",
+    **RouteDecoratorPreset.html_get(),
+)
+async def preview_email_template(
+    request: Request,
+    preview_order: Annotated[TemplatePreviewQuery, Depends()],
+):
+    return templates.TemplateResponse(
+        request=request,
+        name=Redirect.NOTIFICATION_HO_3,
+        context=preview_order.model_dump(),
     )

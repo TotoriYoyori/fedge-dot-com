@@ -1,4 +1,4 @@
-from src.notification.schemas import EmailSendPayload
+from src.notification.schemas import EmailSendRequest
 from src.templates import notification_email_template
 
 # =============== TEXT BODY TEMPLATE ===============
@@ -19,26 +19,26 @@ EMAIL_PLAINTEXT_TEMPLATE = (
 )
 
 # =============== DRAFTING MESSAGE FUNCTIONS ===============
-def write_email_html(send_payload: EmailSendPayload) -> str:
+def write_email_html(send_request: EmailSendRequest) -> str:
     return notification_email_template.render(
-        name=send_payload.name.strip().split()[0] if send_payload.name else "",
-        treatment=send_payload.treatment,
-        location=send_payload.location,
-        order_number=send_payload.order_number,
+        name=send_request.name.strip().split()[0] if send_request.name else "",
+        treatment=send_request.treatment,
+        location=send_request.location,
+        order_number=send_request.order_number,
     )
 
 
-def write_email_plaintext(send_payload: EmailSendPayload) -> str:
-    greeting_name = f" {send_payload.name}" if send_payload.name else ""
+def write_email_plaintext(send_request: EmailSendRequest) -> str:
+    greeting_name = f" {send_request.name}" if send_request.name else ""
     order_number_line = (
-        f"\nOrdernummer: {send_payload.order_number}"
-        if send_payload.order_number
+        f"\nOrdernummer: {send_request.order_number}"
+        if send_request.order_number
         else ""
     )
 
     return EMAIL_PLAINTEXT_TEMPLATE.format(
         greeting_name=greeting_name,
-        treatment=send_payload.treatment,
-        location=send_payload.location,
+        treatment=send_request.treatment,
+        location=send_request.location,
         order_number_line=order_number_line,
     )
