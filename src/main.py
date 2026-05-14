@@ -12,10 +12,7 @@ from src.auth.exceptions import AuthExceptionHandler
 from src.google.exceptions import GoogleExceptionHandler
 from src.notification.exceptions import NotificationExceptionHandler
 
-from src.auth.pages import page as auth_page
-from src.landing.pages import page as landing_page
-from src.notification.pages import page as notification_page
-from src.users.pages import page as users_page
+from src.ssr.router import router as ssr_router
 
 from src.auth.router import router as auth_router
 from src.google.router import router as google_router
@@ -63,27 +60,13 @@ app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 BASE_DIR = Path(__file__).resolve().parent
 
 app.mount(
-    "/static/landing",
-    StaticFiles(directory=BASE_DIR / "landing" / "static"),
-    name="landing-static",
+    "/static",
+    StaticFiles(directory=BASE_DIR / "ssr" / "static"),
+    name="static",
 )
-app.mount(
-    "/static/auth",
-    StaticFiles(directory=BASE_DIR / "auth" / "static"),
-    name="auth-static",
-)
-app.mount(
-    "/static/users",
-    StaticFiles(directory=BASE_DIR / "users" / "static"),
-    name="users-static",
-)
-app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 
 # --------------- API ROUTE REGISTRATION
-app.include_router(landing_page)
-app.include_router(auth_page)
-app.include_router(users_page)
-app.include_router(notification_page)
+app.include_router(ssr_router)
 
 app.include_router(auth_router)
 app.include_router(notification_router)

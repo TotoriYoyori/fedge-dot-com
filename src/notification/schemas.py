@@ -46,6 +46,10 @@ class EmailSendRequest(CustomBaseModel):
     )
 
 
+class SendContext(EmailSendRequest):
+    """Compatibility schema for notification email rendering helpers."""
+
+
 # =============== QUERY SCHEMAS ===============
 class TemplatePreviewQuery(QueryModel):
     """

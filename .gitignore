@@ -23,11 +23,9 @@ __pycache__
 pip-log.txt
 
 # Unit test / coverage reports
-/tests
 .coverage
 .tox
 nosetests.xml
-pytest.ini
 
 # Translations
 *.mo
@@ -52,10 +50,14 @@ credentials.json
 # Static
 /site
 
+# AI Agents
+.aiassistant
+.junie
+
 # Custom
-scraps/TODO.py
+/scraps
 src/dummies
 src/orders/sample
-.junie
 .uv-cache
-/scraps
+.cache
+

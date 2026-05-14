@@ -22,7 +22,7 @@ from src.auth.service import (
     verify_token,
 )
 from src.database import get_db
-from src.templates import Redirect
+from src.ssr.templating import Redirect
 
 
 # =============== SSR REDIRECT HELPERS ===============

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}Error{% endblock %}
+
+{% block content %}
+    <section class="auth-container">
+        <h1>Something went wrong</h1>
+        <p>{{ error }}</p>
+        <a href="{{ request.url_for('home_page') }}" class="btn btn-login">Back to Home</a>
+    </section>
+{% endblock %}

@@ -1,5 +1,5 @@
 from src.notification.schemas import EmailSendRequest
-from src.templates import notification_email_template
+from src.ssr.templating import notification_email_template
 
 # =============== TEXT BODY TEMPLATE ===============
 EMAIL_PLAINTEXT_TEMPLATE = (

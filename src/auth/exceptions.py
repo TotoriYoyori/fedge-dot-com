@@ -2,7 +2,7 @@ from fastapi import Request, status
 from fastapi.responses import JSONResponse
 
 from src.exceptions import BaseExceptionHandler
-from src.templates import Redirect
+from src.ssr.templating import Redirect
 
 
 # =============== DOMAIN-SPECIFIC EXCEPTIONS ===============

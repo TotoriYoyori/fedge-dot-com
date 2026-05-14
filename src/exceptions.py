@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 from fastapi import Request
-from src.templates import templates
+from src.ssr.templating import templates
 
 
 class BaseExceptionHandler(ABC):
@@ -13,7 +13,7 @@ class BaseExceptionHandler(ABC):
 
     @staticmethod
     def _is_browser_request(request: Request) -> bool:
-        return "text/html" in request.headers.get("accept", "")
+        return not request.url.path.startswith("/api/")
 
     @staticmethod
     def _render_error(request: Request, page: str, error: str, status_code: int):

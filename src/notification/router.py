@@ -1,12 +1,17 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 
 from src.auth.dependencies import require_role
 from src.auth.models import User
 
-from src.notification.schemas import EmailSendRequest, EmailSendResponse
+from src.notification.schemas import (
+    EmailSendRequest,
+    EmailSendResponse,
+    TemplatePreviewQuery,
+)
 from src.notification.service import send_email
+from src.ssr.templating import Redirect, templates
 
 # =============== ROUTER ===============
 router = APIRouter(prefix="/api/v1/notification", tags=["api-notification"])
@@ -29,3 +34,19 @@ async def send_notify_email(
     send_request: EmailSendRequest,
 ):
     return await send_email(send_request)
+
+
+@router.get(
+    "/templates",
+    name="preview_notification_template_api",
+    summary="Render a notification email template preview",
+)
+async def preview_email_template(
+    request: Request,
+    preview_order: Annotated[TemplatePreviewQuery, Depends()],
+):
+    return templates.TemplateResponse(
+        request=request,
+        name=Redirect.NOTIFICATION_HO_3,
+        context=preview_order.model_dump(),
+    )
